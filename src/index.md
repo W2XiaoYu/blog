@@ -11,8 +11,8 @@ hero:
   tagline: 人生到处知何似，应似飞鸿踏雪泥。
   actions:
     - theme: brand
-      text: Markdown Examples
-      link: /markdown-examples
+      text: 安卓
+      link: /Android/compose
     - theme: alt
       text: 前端
       link: /front/vue

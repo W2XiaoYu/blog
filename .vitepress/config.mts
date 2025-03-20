@@ -15,6 +15,7 @@ export default defineConfig({
     lineNumbers: true,
     config(md) {
       md.use(timeline)
+
     },
   },
   themeConfig: {
