@@ -13,6 +13,8 @@ flutter run apk --flavor xxxxx --dart-define=channel=xxxxx
 flutter config --jdk-dir "D:\APP\jdk-17.0.12_windows-x64_bin\jdk-17.0.12"
 # 拉去远程仓库指定分支到本地并且文件名为分支名字
 git clone -b xxxname --single-branch https://gitee.com/test.git xxxname
+# 执行生成
+flutter packages pub run build_runner build
 
 ```
 
