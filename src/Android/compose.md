@@ -56,3 +56,102 @@ Column {
     Text(text = "用户ID")
 }
 ```
+
+### TopAppBar
+
+TopAppBar需要配合Scaffold中的topBar使用
+
+```kt
+Scaffold(
+    topBar = {
+        TopAppBar(
+            // 使用 TopAppBarDefaults 来创建 TopAppBarColors 对象
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color.Red, // 设置背景颜色
+                titleContentColor = Color.White, // 设置标题文字颜色
+                navigationIconContentColor = Color.White, // 设置导航图标颜色
+                actionIconContentColor = Color.White // 设置操作图标颜色
+            ),
+            title = { Text(text = "基本 TopAppBar") }
+        )
+    }
+) { innerPadding ->
+    // 这里可以添加内容
+}
+```
+
+### Scaffold、Drawer和bottomBar
+
+```kt
+val drawerState = rememberDrawerState(DrawerValue.Closed)//设置默认开启状态
+val scope = rememberCoroutineScope()
+val navigatorText = listOf("首页", "消息", "我的")
+val navigatorIcon = listOf(Icons.Filled.Home, Icons.Filled.Build, Icons.Filled.Person)
+var currentIndex by remember { mutableStateOf(0) }
+ModalNavigationDrawer(
+    drawerState = drawerState,
+    drawerContent = { AppDrawContent() },
+) {
+//因为需要使用Drawer，所以需要使用ModalNavigationDrawer来包裹Scaffold
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        bottomBar = {
+            NavigationBar {
+                navigatorText.forEachIndexed { index, text ->
+                    NavigationBarItem(
+                        icon = { Icon(navigatorIcon[index], contentDescription = text) },
+                        label = { Text(text) },
+                        selected = currentIndex == index,
+                        onClick = {
+                            currentIndex = index
+                        },
+                        // 设置选中和未选中状态下的颜色
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Color.Red, // 选中时图标的颜色
+                            unselectedIconColor = Color.Gray, // 未选中时图标的颜色
+                            selectedTextColor = Color.Red, // 选中时文字的颜色
+                            unselectedTextColor = Color.Gray, // 未选中时文字的颜色
+                            indicatorColor = Color.LightGray // 选中时的指示器颜色
+                        ),
+                    )
+                }
+            }
+        },
+        topBar = {
+            TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Blue, // 设置背景颜色
+                    titleContentColor = Color.White, // 设置标题文字颜色
+                    navigationIconContentColor = Color.White, // 设置导航图标颜色
+                    actionIconContentColor = Color.White // 设置操作图标颜色
+                ),
+                title = { Text(text = "基本 Scaffold") },
+                actions = {
+                    Icon(Icons.Filled.Star, contentDescription = "Star")
+                },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        scope.launch {
+                            if (drawerState.isOpen) {
+                                drawerState.close()
+                            } else {
+                                drawerState.open()
+                            }
+                        }
+                    }) {
+                        Icon(Icons.Filled.Menu, contentDescription = "Menu")
+                    }
+                }
+            )
+        },
+
+
+        ) { innerPadding ->
+        Column(modifier = Modifier.padding(innerPadding)) {
+            BuildPage(index = currentIndex)
+        }
+
+
+    }
+}
+```
