@@ -400,3 +400,16 @@ const handleChangeTheme = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) =
 };
 
 ```
+
+## UNI-APP APP端跳转微信打开获客链接
+
+```js
+const encodedUrl = encodeURIComponent(
+     res.data.customer_link);
+    const schemeUrl = `weixin://biz/ww/profile/${encodedUrl}`;
+    plus.runtime.openURL(schemeUrl)
+
+manifest.json 中配置
+  "android": {
+    "schemes": ["weixin"],
+```
