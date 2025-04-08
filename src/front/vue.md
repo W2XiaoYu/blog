@@ -409,9 +409,6 @@ const encodedUrl = encodeURIComponent(
     const schemeUrl = `weixin://biz/ww/profile/${encodedUrl}`;
     plus.runtime.openURL(schemeUrl)
 
-manifest.json 中配置
-  "android": {
-    "schemes": ["weixin"],
 ```
 ## uniapp APP打包后 启动很慢的问题
 场景： App打包后安装使用，杀死后台后点击图标再次启动，会卡在启动界面很久，时间甚至达到了八九秒。

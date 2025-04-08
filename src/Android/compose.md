@@ -1,5 +1,5 @@
 
-# jetpack compose 学习
+# jetpack Compose 学习
 
 项目中有一些原生项目，flutter有时候需要使用原生方法，所以还是需要去学习一点原生。
 
@@ -154,4 +154,485 @@ ModalNavigationDrawer(
 
     }
 }
+```
+
+## exoplayer封装使用
+
+自定义控制界面，可拖动、全屏切换。 倍速暂无
+首先安装插件
+
+```kt
+ implementation (libs.androidx.media3.exoplayer)
+```
+
+**videoViewModel.kt**
+
+```kt
+
+
+class VideoViewModel : ViewModel() {
+
+    private var _exoplayer: ExoPlayer? = null
+    val exoplayer: ExoPlayer
+        get() = _exoplayer ?: throw IllegalStateException("ExoPlayer未初始化")
+
+    private val _isInitialized = MutableStateFlow(false)
+    val isInitialized: StateFlow<Boolean> = _isInitialized
+    private val _isPlaying = MutableStateFlow(false)
+    val isPlaying: StateFlow<Boolean> = _isPlaying
+
+    private val _isFullScreen = MutableStateFlow(false)
+    val isFullScreen: StateFlow<Boolean> = _isFullScreen
+
+
+    fun initPlayer(context: Context, videoUrl: String) {        // 同步初始化
+        if (_exoplayer == null) {
+            _exoplayer = ExoPlayer.Builder(context).build().apply {
+                setMediaItem(MediaItem.fromUri(videoUrl.toUri()))
+                prepare()
+                play()
+            }
+            _isPlaying.value = true
+            _exoplayer?.repeatMode = ExoPlayer.REPEAT_MODE_ONE
+            _isInitialized.value = true
+        } else {
+            // ExoPlayer 已初始化，只需重新设置 URL 或其他必要参数
+            _exoplayer?.setMediaItem(MediaItem.fromUri(videoUrl.toUri()))
+            _exoplayer?.prepare()
+            _exoplayer?.play()
+        }
+    }
+
+    fun toggleFullScreen(context: Context) {
+        _isFullScreen.value = !_isFullScreen.value
+        setScreenOrientation(context)
+    }
+
+
+    fun play() {
+        _exoplayer?.play()
+        _isPlaying.value = true
+
+    }
+
+    fun pause() {
+        _exoplayer?.pause()
+        _isPlaying.value = false
+
+    }
+
+    override fun onCleared() {
+        _exoplayer?.release()
+        super.onCleared()
+
+
+    }
+
+    // 设置屏幕方向
+    private fun setScreenOrientation(context: Context) {
+        val activity = context as? Activity
+        activity?.requestedOrientation = if (_isFullScreen.value) {
+            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        }
+    }
+}
+```
+
+**videoCompose组件**
+
+```kt
+
+@Composable
+fun LandingVideo() {
+
+    val context = LocalContext.current
+    val viewModel: VideoViewModel = viewModel()
+    val isInitialized by viewModel.isInitialized.collectAsState()
+    val isFullScreen by viewModel.isFullScreen.collectAsState()
+    // 使用 BackHandler 来监听返回按钮
+    BackHandler(enabled = isFullScreen) {
+        // 当是横屏状态时，切换回竖屏，而不是返回上一个界面
+        viewModel.toggleFullScreen(context)
+    }
+    LaunchedEffect(isFullScreen) {
+        val window = (context as? androidx.activity.ComponentActivity)?.window
+        if (isFullScreen) {
+            //兼容 Android 11+ 的新 API 写法
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                window?.insetsController?.hide(WindowInsets.Type.systemBars())
+                window?.insetsController?.systemBarsBehavior =
+                    WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            } else {
+                @Suppress("DEPRECATION")
+                window!!.decorView.systemUiVisibility = (
+                        View.SYSTEM_UI_FLAG_FULLSCREEN
+                                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                        )
+            }
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                window?.insetsController?.show(WindowInsets.Type.systemBars())
+            } else {
+                @Suppress("DEPRECATION")
+                window?.decorView?.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_VISIBLE
+            }
+        }
+    }
+    // 根据全屏状态动态设置容器尺寸
+    val modifier = if (isFullScreen) {
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    } else {
+        Modifier
+            .fillMaxWidth()
+            .height(220.dp)
+            .statusBarsPadding()
+            .background(Color.Black)
+    }
+    // 控制器状态
+    var showControls by remember { mutableStateOf(true) }
+    // 记录最后一次交互时间（毫秒）
+    val lastInteractionTime = remember { mutableStateOf(System.currentTimeMillis()) }
+
+    LaunchedEffect(lastInteractionTime.value) {
+        // 每当交互时间更新时，判断是否隐藏控制器
+        delay(6000)
+        if (System.currentTimeMillis() - lastInteractionTime.value >= 6000L) {
+            showControls = false
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(220.dp)
+            .statusBarsPadding()
+            .background(Color.Black)
+
+    ) {
+
+        AndroidView(
+            modifier = Modifier
+                .fillMaxSize()
+                .align(Alignment.Center),
+            factory = { ctx ->
+                val playerView = PlayerView(ctx).apply {
+                    useController = false
+                    // 禁止原生控件拦截点击事件
+                    isClickable = false
+                }
+                viewModel.initPlayer(
+                    ctx,
+                    "http://cdnwm.yuluojishu.com/20250317/b9239f4742a409e2367dfcb846c0089b.mp4"
+                )
+                playerView.player = viewModel.exoplayer
+                playerView
+            }
+        )
+        // 透明点击层，拦截点击事件
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = {
+                            // 每次点击都显示控制器并更新时间
+                            showControls = true
+                            lastInteractionTime.value = System.currentTimeMillis()
+                        }
+                    )
+                }
+        ) {
+            //控制器
+            if (isInitialized && showControls) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .height(30.dp)
+                        .background(Color.Black.copy(alpha = 0.5f))
+                        .zIndex(1f),
+                ) {
+
+
+                    CustomPlayerControls(
+                        isFullScreen = isFullScreen,
+                        toggleFullScreen = { viewModel.toggleFullScreen(context) },
+                        player = viewModel.exoplayer,
+                        onPlayPause = {
+                            if (viewModel.isPlaying.value) {
+                                viewModel.pause()
+                            } else {
+                                viewModel.play()
+                            }
+                            // 每次操作都更新最后交互时间，重新计时隐藏
+                            lastInteractionTime.value = System.currentTimeMillis()
+                            showControls = true
+                        },
+                        onSeekChange = {
+                            viewModel.exoplayer.seekTo(it)
+                            // 每次操作都更新最后交互时间，重新计时隐藏
+                            lastInteractionTime.value = System.currentTimeMillis()
+                            showControls = true
+                        },
+                        onSeekComplete = {
+                            viewModel.exoplayer.play()
+                            // 每次操作都更新最后交互时间，重新计时隐藏
+                            lastInteractionTime.value = System.currentTimeMillis()
+                            showControls = true
+                        }
+                    )
+                }
+            }
+        }
+
+    }
+
+}
+
+```
+
+自定义控制界面<br/>
+CustomPlayerControls.kt
+
+```kt
+@OptIn(UnstableApi::class)
+@Composable
+fun CustomPlayerControls(
+    isFullScreen: Boolean,
+    toggleFullScreen: () -> Unit,
+    player: Player,
+    onPlayPause: () -> Unit,
+    onSeekChange: (Long) -> Unit,
+    onSeekComplete: () -> Unit
+) {
+    // 是否正在拖动进度条
+    var isSeeking by remember { mutableStateOf(false) }
+    // 当前播放进度（毫秒）
+    var currentPosition by remember { mutableStateOf(player.currentPosition) }
+    // 获取总时长，若无效则设为 0
+    var bufferedPosition by remember { mutableStateOf(0L) }
+    var totalDuration by remember { mutableStateOf(0L) }
+    var wasPlayingBeforeSeek by remember { mutableStateOf(false) }
+    // 播放器是否已准备好
+    var isReady by remember { mutableStateOf(false) }
+    // 监听播放器状态和进度变化，合并到一个监听器中
+    DisposableEffect(player) {
+        val listener = object : Player.Listener {
+            override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
+                if (playbackState == Player.STATE_READY && !isReady) {
+                    isReady = true
+                }
+            }
+
+            override fun onEvents(player: Player, events: Player.Events) {
+                bufferedPosition = player.bufferedPosition
+                totalDuration = player.duration.coerceAtLeast(1)
+                if (!isSeeking) {
+
+                    currentPosition = player.currentPosition
+                }
+            }
+        }
+        player.addListener(listener)
+        onDispose {
+            player.removeListener(listener)
+        }
+    }
+    LaunchedEffect(player) {
+        // 在此添加进度更新逻辑，确保控件显示时也会更新
+        while (true) {
+            if (player.isPlaying && !isSeeking) {
+                currentPosition = player.currentPosition
+                bufferedPosition = player.bufferedPosition
+                totalDuration = player.duration.coerceAtLeast(1)
+            }
+            delay(1000)  // 每秒更新进度
+        }
+    }
+
+    // 当播放器未准备好时，不渲染控制器
+//    if (!isReady) return
+
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 12.dp)
+
+    ) {
+        IosStyleProgressSlider(
+            currentPosition = currentPosition,
+            bufferedPosition = bufferedPosition,
+            totalDuration = totalDuration,
+            onSeekChanged = { position ->
+                // 记录拖动前的播放状态
+                wasPlayingBeforeSeek = player.isPlaying
+                if (player.isPlaying) {
+                    player.pause() // 拖动时暂停播放
+                }
+                onSeekChange(position)
+            },
+            onSeekStart = {
+                wasPlayingBeforeSeek = player.isPlaying
+                if (player.isPlaying) player.pause()
+            },
+            onSeekEnd = {
+                // 拖动结束后恢复播放状态
+                if (wasPlayingBeforeSeek) {
+                    player.play()
+                }
+                onSeekComplete()
+            },
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 12.dp)
+        )
+        Text(text = formatTime(currentPosition), color = Color.White, fontSize = 12.sp)
+        Text(text = "/${formatTime(totalDuration)}", color = Color.White, fontSize = 12.sp)
+        // 播放暂停按钮
+        IconButton(
+            onClick = onPlayPause
+        ) {
+            Icon(
+                painter = if (player.isPlaying) painterResource(id = R.drawable.ic_pause_icon) else painterResource(
+                    id = R.drawable.ic_play_icon
+                ),
+                tint = Color.White,
+                contentDescription = "播放/暂停"
+            )
+        }
+        // 全屏按钮
+        IconButton(
+            onClick = toggleFullScreen,
+            modifier = Modifier
+        ) {
+            Icon(
+                painter = if (isFullScreen) painterResource(id = R.drawable.ic_fullscreen_false) else painterResource(
+                    id = R.drawable.ic_fullscreen_true
+                ),
+                contentDescription = "全屏",
+                tint = Color.White
+            )
+        }
+    }
+}
+
+
+@SuppressLint("DefaultLocale")
+private fun formatTime(milliseconds: Long): String {
+    val seconds = (milliseconds / 1000).toInt()
+    return String.format("%02d:%02d", seconds / 60, seconds % 60)
+}
+
+@Composable
+fun IosStyleProgressSlider(
+    currentPosition: Long,
+    bufferedPosition: Long,
+    totalDuration: Long,
+    onSeekStart: () -> Unit, // 新增拖动开始回调
+    onSeekEnd: () -> Unit,   // 新增拖动结束回调
+    onSeekChanged: (Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // 进度条参数配置
+    val trackHeight = 4.dp
+    val thumbRadius = 6.dp
+    val activeColor = Color.White.copy(alpha = 0.8f)
+    val bufferedColor = Color.LightGray.copy(alpha = 0.6f)
+    val backgroundColor = Color.DarkGray.copy(alpha = 0.4f)
+
+    var isDragging by remember { mutableStateOf(false) }
+    val sliderWidth = remember { mutableStateOf(0f) }
+
+    Box(
+        modifier = modifier
+            .height(40.dp)
+            .pointerInput(Unit) {
+                detectTapGestures { offset ->
+                    onSeekStart() // 拖动开始
+                    val newPosition = (offset.x / sliderWidth.value * totalDuration).toLong()
+                    onSeekChanged(newPosition.coerceIn(0, totalDuration))
+                    onSeekEnd() // 拖动结束
+                }
+            }
+    ) {
+        // 绘制底层背景
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(trackHeight)
+                .align(Alignment.Center)
+        ) {
+            sliderWidth.value = size.width
+
+            // 绘制背景轨道
+            drawRoundRect(
+                color = backgroundColor,
+                cornerRadius = CornerRadius(2.dp.toPx())
+            )
+
+            // 绘制缓冲进度
+            val bufferedPercent = bufferedPosition.toFloat() / totalDuration
+            drawRoundRect(
+                color = bufferedColor,
+                cornerRadius = CornerRadius(2.dp.toPx()),
+                size = Size(size.width * bufferedPercent, size.height)
+            )
+
+            // 绘制当前进度
+            val progressPercent = currentPosition.toFloat() / totalDuration
+            drawRoundRect(
+                color = activeColor,
+                cornerRadius = CornerRadius(2.dp.toPx()),
+                size = Size(size.width * progressPercent, size.height)
+            )
+        }
+
+        // 绘制圆形滑块
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDragStart = {
+                            isDragging = true
+                            onSeekStart() // 拖动开始
+                        },
+                        onDragEnd = {
+                            isDragging = false
+                            onSeekEnd()  // 拖动结束
+                        }
+                    ) { change, _ ->
+                        val newPosition = (change.position.x / sliderWidth.value * totalDuration)
+                            .toLong()
+                        onSeekChanged(newPosition.coerceIn(0, totalDuration))
+                    }
+                }
+        ) {
+            val progressPercent = currentPosition.toFloat() / totalDuration
+            val thumbX = size.width * progressPercent
+
+            drawCircle(
+                color = activeColor,
+                radius = thumbRadius.toPx(),
+                center = Offset(thumbX, center.y)
+            )
+
+            if (isDragging) {
+                drawCircle(
+                    color = activeColor.copy(alpha = 0.2f),
+                    radius = thumbRadius.toPx() * 2,
+                    center = Offset(thumbX, center.y)
+                )
+            }
+        }
+    }
+}
+
 ```
