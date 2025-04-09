@@ -636,3 +636,96 @@ fun IosStyleProgressSlider(
 }
 
 ```
+
+## 安卓多渠道打包
+
+1. build.gradle.kts中配置
+
+```kt
+productFlavors {//多渠道信息
+    create("oppo") {
+        dimension = "none"
+        applicationId = "com.baidu.www"
+        versionCode = 1010
+        versionName = "1.0.1"
+        manifestPlaceholders["APP_NAME"] = "百度"
+        manifestPlaceholders["APP_ICON"] = "@mipmap/ic_launcher"
+        signingConfig = signingConfigs.getByName("keyStoreRelease")
+    }
+}
+buildTypes {//打正式包的配置信息
+    release {
+        isMinifyEnabled = true
+        proguardFiles(
+            getDefaultProguardFile("proguard-android-optimize.txt"),
+            "proguard-rules.pro"
+        )
+        signingConfig = signingConfigs.getByName("keyStoreRelease")
+        ndk {
+            // noinspection ChromeOsAbiSupport
+            abiFilters += listOf("armeabi-v7a","arm64-v8a")
+        }
+    }
+}
+buildFeatures {
+    compose = true
+    buildConfig = true//这个是生成配置信息 方便我们在代码里去获取渠道信息
+}
+//开启上面 生成的数据
+public final class BuildConfig {
+  public static final boolean DEBUG = Boolean.parseBoolean("true");
+  public static final String APPLICATION_ID = "com.baidu.www";
+  public static final String BUILD_TYPE = "debug";
+  public static final String FLAVOR = "oppo";
+  public static final int VERSION_CODE = 1010;
+  public static final String VERSION_NAME = "1.0.1";
+}
+
+//打包输出文件名就是对应的渠道名字
+applicationVariants.all {
+    outputs.all {
+        if (this is com.android.build.gradle.internal.api.ApkVariantOutputImpl) {
+            outputFileName = "${flavorName}.apk"
+        }
+    }
+}
+```
+
+2. fest,xml文件配置
+
+```xml
+<application
+
+    android:allowBackup="true"
+    android:usesCleartextTraffic="true"
+    android:dataExtractionRules="@xml/data_extraction_rules"
+    android:fullBackupContent="@xml/backup_rules"
+    android:icon="${APP_ICON}"//图标
+    android:label="${APP_NAME}"//app名字
+    android:roundIcon="${APP_ICON}"
+    android:supportsRtl="true"
+    android:theme="@style/Theme.Test_compose"
+    tools:targetApi="31">
+    <activity
+        android:name=".MainActivity"
+        android:exported="true"
+        android:label="${APP_NAME}"
+        android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize"
+        android:screenOrientation="portrait"
+        android:theme="@style/Theme.Test_compose">
+        <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent-filter>
+    </activity>
+</application>
+```
+
+3. 使用渠道信息
+
+```kt
+const val CHANNEL = BuildConfig.CHANNEL
+```
+
+4. 打包的时候就点击右侧gradle/app/other/assemble开头的，选择对应渠道Release
