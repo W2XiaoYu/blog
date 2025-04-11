@@ -729,3 +729,116 @@ const val CHANNEL = BuildConfig.CHANNEL
 ```
 
 4. 打包的时候就点击右侧gradle/app/other/assemble开头的，选择对应渠道Release
+
+## 安卓跳转微信小程序
+
+### 安装微信SDK
+
+```kt
+ implementation(libs.wechat.sdk.android)//微信SDK
+```
+
+### 微信跳转工具封装
+
+```kt
+object WeChatUtils {
+    private var mApi: IWXAPI? = null
+
+    //初始化
+    fun init(appId: String) {
+        print("初始化微信：$appId")
+        if (appId.isEmpty()) return
+        val api = WXAPIFactory.createWXAPI(
+            MyAppConfig.getConfig<Context>(MyAppConfig.Keys.APPLICATION),
+            appId,
+            false
+        )
+        api.registerApp(appId)
+        mApi = api
+    }
+
+    //判断是否安装微信
+    fun getApi(): IWXAPI? {
+        val api = mApi
+        if (api == null) {
+            print("初始化失败")
+        } else if (!api.isWXAppInstalled) {
+            print("未安装微信")
+        }
+        return api
+    }
+
+    fun jumpWxMiniProgram(
+        courseId: Int
+    ) {
+        getApi()?.let {
+            val miniProgramId = AppRuntime.initConfig?.wxMiniProgramId ?: ""
+            val miniProgramPath = AppRuntime.initConfig?.wxMiniProgramPath ?: ""
+            val realPath = "${miniProgramPath}?token=${
+                AccountManager.getInstance().getToken()
+            }&video_id=${courseId}"
+            print("跳转微信小程序：$realPath")
+            val req = WXLaunchMiniProgram.Req()
+            req.userName = miniProgramId
+            req.path = realPath
+            req.miniprogramType = WXLaunchMiniProgram.Req.MINIPTOGRAM_TYPE_RELEASE
+            it.sendReq(req)
+        }
+    }
+}
+```
+
+### 注册使用
+
+```kt
+//初始化
+WeChatUtils.init(it.initConfig?.wxPayAppId ?: "")
+//使用 ---跳转微信小程序
+WeChatUtils.jumpWxMiniProgram( landingPageInfo?.courseId ?: 0)
+```
+
+### 从小程序返回App
+
+```kt
+//fest.xml 新增
+<activity
+    android:name=".wxapi.WXEntryActivity"
+    android:exported="true"
+    android:launchMode="singleTask"
+    android:taskAffinity="${applicationId}" />
+<activity-alias
+    android:name="${applicationId}.wxapi.WXEntryActivity"
+    android:exported="true"
+    android:launchMode="singleTask"
+    android:targetActivity=".wxapi.WXEntryActivity"
+    />
+//然后在项目目录下新增wxapi/WXEntryActivity.kt文件
+class WXEntryActivity : ComponentActivity(), IWXAPIEventHandler {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        WeChatUtils.getApi()?.handleIntent(intent, this)
+    }
+    override fun onNewIntent(intent: Intent, caller: ComponentCaller) {
+        super.onNewIntent(intent, caller)
+        setIntent(intent)
+        WeChatUtils.getApi()?.handleIntent(intent, this)
+    }
+
+    override fun onReq(req: BaseReq?) {
+        println("WXEntryActivity onReq")
+    }
+
+    override fun onResp(resp: BaseResp?) {
+        resp ?: return
+
+        println("WXEntryActivity errStr = ${resp.errStr} errCode = ${resp.errCode}")
+        finish()
+    }
+}
+
+```
+
+### 注意项
+
+如何当前应用的包名和小程序配置的包名不一致的话会提示签名配置不一致，需要检查包名和配置。<br/>
+如果包名和小程序配置都没有问题的话，请检查build.gradle.kts 中 buildTypes 中 debug和release中的signingConfig配置是否正确。
