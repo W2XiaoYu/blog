@@ -842,3 +842,15 @@ class WXEntryActivity : ComponentActivity(), IWXAPIEventHandler {
 
 如何当前应用的包名和小程序配置的包名不一致的话会提示签名配置不一致，需要检查包名和配置。<br/>
 如果包名和小程序配置都没有问题的话，请检查build.gradle.kts 中 buildTypes 中 debug和release中的signingConfig配置是否正确。
+
+## APP调整微信
+
+```kt
+fun jumpWxCustomerLink(customerLink: String) {
+    val context = MyAppConfig.getConfig<Context>(MyAppConfig.Keys.APPLICATION)//此次是context ，也可以传进来
+    val intent = Intent(Intent.ACTION_VIEW, customerLink.toUri()).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+    }
+    context.startActivity(intent)
+}
+```
