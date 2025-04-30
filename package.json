@@ -1,5 +1,6 @@
 {
   "devDependencies": {
+    "unplugin-vue-components": "^28.5.0",
     "vitepress": "^1.6.3",
     "vitepress-markdown-timeline": "^1.2.2",
     "vitepress-theme-website": "^1.0.8"

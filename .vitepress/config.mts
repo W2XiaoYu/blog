@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitepress'
 export const baseUrl = '/blog/'
+import Components from 'unplugin-vue-components/vite'
 import timeline from "vitepress-markdown-timeline";
-// https://vitepress.dev/reference/site-config
 export default defineConfig({
   base: baseUrl,
   title: "CongWong的笔记",
@@ -10,6 +10,7 @@ export default defineConfig({
     ['link', { rel: 'icon', href: baseUrl + 'favicon.ico' }]
   ],
   srcDir: "src",
+
   lang: "zh-CN",
   markdown: {
     lineNumbers: true,
@@ -83,4 +84,5 @@ export default defineConfig({
       { icon: 'github', link: 'https://github.com/W2XiaoYu' }
     ]
   },
+
 })

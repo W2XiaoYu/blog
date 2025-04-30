@@ -8,11 +8,13 @@ import CustomLayout from './layout/CustomLayout.vue'
 import './style.css'
 // 只需添加以下一行代码，引入时间线样式
 import "vitepress-markdown-timeline/dist/theme/index.css";
+
 export default {
   extends: DefaultTheme,
-  Layout: CustomLayout, // 直接将 CustomLayout 作为 Layout
+  // Layout: CustomLayout, // 直接将 CustomLayout 作为 Layout
+  Layout: CustomLayout,
   enhanceApp({ app, router, siteData }) {
-    // useLive2d()
+
     app.component('ColorsUtils', ColorsUtils)
   },
 } satisfies Theme
