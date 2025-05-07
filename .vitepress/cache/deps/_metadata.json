@@ -1,49 +1,43 @@
 {
-  "hash": "540c6205",
+  "hash": "fae76058",
   "configHash": "a172113f",
-  "lockfileHash": "6198d263",
-  "browserHash": "d8a51745",
+  "lockfileHash": "fd099684",
+  "browserHash": "a4d70b5b",
   "optimized": {
     "vue": {
       "src": "../../../node_modules/.pnpm/vue@3.5.13/node_modules/vue/dist/vue.runtime.esm-bundler.js",
       "file": "vue.js",
-      "fileHash": "122e10ca",
+      "fileHash": "68314186",
       "needsInterop": false
     },
     "vitepress > @vue/devtools-api": {
       "src": "../../../node_modules/.pnpm/@vue+devtools-api@7.7.2/node_modules/@vue/devtools-api/dist/index.js",
       "file": "vitepress___@vue_devtools-api.js",
-      "fileHash": "e9f73ddc",
+      "fileHash": "bacd4b78",
       "needsInterop": false
     },
     "vitepress > @vueuse/core": {
       "src": "../../../node_modules/.pnpm/@vueuse+core@12.8.2/node_modules/@vueuse/core/index.mjs",
       "file": "vitepress___@vueuse_core.js",
-      "fileHash": "cee9fc84",
+      "fileHash": "fc522e31",
       "needsInterop": false
     },
     "vitepress > @vueuse/integrations/useFocusTrap": {
       "src": "../../../node_modules/.pnpm/@vueuse+integrations@12.8.2_e99981c3767ddedc619a420036bfe564/node_modules/@vueuse/integrations/useFocusTrap.mjs",
       "file": "vitepress___@vueuse_integrations_useFocusTrap.js",
-      "fileHash": "cdcb01de",
+      "fileHash": "0d45670e",
       "needsInterop": false
     },
     "vitepress > mark.js/src/vanilla.js": {
       "src": "../../../node_modules/.pnpm/mark.js@8.11.1/node_modules/mark.js/src/vanilla.js",
       "file": "vitepress___mark__js_src_vanilla__js.js",
-      "fileHash": "3fce3fee",
+      "fileHash": "06eb5214",
       "needsInterop": false
     },
     "vitepress > minisearch": {
       "src": "../../../node_modules/.pnpm/minisearch@7.1.2/node_modules/minisearch/dist/es/index.js",
       "file": "vitepress___minisearch.js",
-      "fileHash": "bd04f4a5",
-      "needsInterop": false
-    },
-    "@css-render/vue3-ssr": {
-      "src": "../../../node_modules/.pnpm/@css-render+vue3-ssr@0.15.14_vue@3.5.13/node_modules/@css-render/vue3-ssr/esm/index.js",
-      "file": "@css-render_vue3-ssr.js",
-      "fileHash": "8eb44b7c",
+      "fileHash": "27adaa0c",
       "needsInterop": false
     }
   },

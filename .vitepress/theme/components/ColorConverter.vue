@@ -1,6 +1,6 @@
 <template>
     <div class="color-converter">
-        <h2 class="title">颜色格式转换</h2>
+        <h2 class="title" style="border: none;">颜色格式转换</h2>
 
         <div class="input-container">
             <input v-model="colorInput" type="text" class="input-box"
@@ -209,6 +209,7 @@ const decimalToHex = (decimal) => {
 </script>
 
 <style scoped>
+/* 整体容器 */
 .color-converter {
     max-width: 500px;
     margin: 0 auto;
@@ -217,8 +218,13 @@ const decimalToHex = (decimal) => {
     background-color: var(--vp-c-bg-soft);
     border: 1px solid var(--vp-c-divider);
     box-shadow: var(--vp-shadow-1);
+    /* 响应式布局，适应不同屏幕宽度 */
+    width: 100%;
+    max-width: 500px;
+    box-sizing: border-box;
 }
 
+/* 标题 */
 .title {
     margin-top: 0;
     margin-bottom: 1.25rem;
@@ -227,12 +233,16 @@ const decimalToHex = (decimal) => {
     color: var(--vp-c-text-1);
 }
 
+/* 输入容器 */
 .input-container {
     display: flex;
     gap: 0.75rem;
     margin-bottom: 1rem;
+    /* 响应式布局，输入框和颜色选择器在小屏幕上换行 */
+    flex-wrap: wrap;
 }
 
+/* 文本输入框 */
 .input-box {
     flex: 1;
     padding: 0.5rem 0.75rem;
@@ -242,6 +252,9 @@ const decimalToHex = (decimal) => {
     color: var(--vp-c-text-1);
     font-family: var(--vp-font-family-base);
     transition: border-color 0.25s;
+    /* 小屏幕上输入框宽度为 100% */
+    width: 100%;
+    max-width: 300px;
 }
 
 .input-box:focus {
@@ -249,6 +262,7 @@ const decimalToHex = (decimal) => {
     border-color: var(--vp-c-brand);
 }
 
+/* 颜色选择器 */
 input[type="color"] {
     width: 40px;
     height: 40px;
@@ -264,6 +278,7 @@ input[type="color"]::-webkit-color-swatch {
     border: none;
 }
 
+/* 转换按钮 */
 .convert-btn {
     width: 100%;
     padding: 0.5rem;
@@ -281,6 +296,7 @@ input[type="color"]::-webkit-color-swatch {
     background-color: var(--vp-button-brand-hover-bg);
 }
 
+/* 结果容器 */
 .result-container,
 .converted-container {
     margin-top: 1rem;
@@ -290,6 +306,7 @@ input[type="color"]::-webkit-color-swatch {
     border: 1px solid var(--vp-c-divider-light);
 }
 
+/* 输出项容器 */
 .output-wrapper {
     display: flex;
     align-items: center;
@@ -298,18 +315,22 @@ input[type="color"]::-webkit-color-swatch {
     padding: 0.5rem;
     border-radius: 4px;
     background-color: var(--vp-c-bg);
+    /* 响应式布局，在小屏幕上文本和按钮换行 */
+    flex-wrap: wrap;
 }
 
 .output-wrapper:last-child {
     margin-bottom: 0;
 }
 
+/* 输入格式显示的输出项容器 */
 .output-wrapper.is-input {
     background-color: transparent;
     padding-left: 0;
     padding-right: 0;
 }
 
+/* 颜色预览框 */
 .color-preview {
     width: 24px;
     height: 24px;
@@ -318,6 +339,7 @@ input[type="color"]::-webkit-color-swatch {
     border-style: solid;
 }
 
+/* 复制按钮 */
 .copy-btn {
     padding: 0.25rem 0.5rem;
     margin-left: 0.5rem;
@@ -328,6 +350,10 @@ input[type="color"]::-webkit-color-swatch {
     font-size: 0.8rem;
     cursor: pointer;
     transition: all 0.2s;
+    /* 小屏幕上复制按钮宽度为 100% */
+    width: 100%;
+    max-width: 100px;
+    margin-top: 0.25rem;
 }
 
 .copy-btn:hover {
@@ -340,6 +366,7 @@ input[type="color"]::-webkit-color-swatch {
     color: var(--vp-c-green-darker);
 }
 
+/* 提示文本 */
 .info-text {
     margin: 1rem 0;
     color: var(--vp-c-text-2);
@@ -352,9 +379,12 @@ input[type="color"]::-webkit-color-swatch {
 }
 
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
     }
+
     50% {
         opacity: 0.6;
     }
