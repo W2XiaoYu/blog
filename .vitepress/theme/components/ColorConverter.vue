@@ -211,6 +211,7 @@ const decimalToHex = (decimal) => {
 <style scoped>
 /* 整体容器 */
 .color-converter {
+
     max-width: 500px;
     margin: 0 auto;
     padding: 1.5rem;
@@ -222,6 +223,7 @@ const decimalToHex = (decimal) => {
     width: 100%;
     max-width: 500px;
     box-sizing: border-box;
+    margin-top: 20px;
 }
 
 /* 标题 */

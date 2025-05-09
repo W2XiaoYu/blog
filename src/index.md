@@ -19,6 +19,9 @@ hero:
     - theme: alt
       text: flutter笔记
       link: /flutter
+    - theme: alt
+      text: Linux
+      link: /linux/nginx
 
 features:
   - title: Web
