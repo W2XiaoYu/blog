@@ -1,6 +1,5 @@
 import { defineConfig } from 'vitepress'
 export const baseUrl = '/blog/'
-import Components from 'unplugin-vue-components/vite'
 import timeline from "vitepress-markdown-timeline";
 export default defineConfig({
   base: baseUrl,
@@ -78,6 +77,17 @@ export default defineConfig({
           { text: 'React', link: '/front/react' }
         ]
       },
+      {
+        text: "Linux",
+        items: [
+          { text: 'Nginx', link: '/linux/nginx' },
+          { text: 'Linux命令', link: '/linux/command' },
+          {
+            text: "vim编辑器",
+            link: '/linux/vim'
+          }
+        ]
+      }
     ],
 
     socialLinks: [
