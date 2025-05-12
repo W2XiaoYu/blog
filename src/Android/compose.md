@@ -156,6 +156,138 @@ ModalNavigationDrawer(
 }
 ```
 
+## 自定义Tab
+
+1、封装tabROw
+
+```kt
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ScrollableTabRow(
+    modifier: Modifier = Modifier,
+    tabs: List<String>,
+    selectedIndex: Int,
+    tabPadding: Dp = 8.dp,
+    onTabSelected: (Int) -> Unit
+) {
+    val density = LocalDensity.current
+    val tabWidths = remember { mutableStateListOf<Int>() }
+    val indicatorOffsetX = remember { Animatable(0f) }
+    val indicatorWidth = remember { Animatable(0f) }
+    val scrollState = rememberScrollState()
+    LaunchedEffect(selectedIndex, tabWidths) {
+        if (tabWidths.size > selectedIndex) {
+            // 计算选中的 tab 左侧所有 tab 的宽度累加值（包括 padding）
+            val offset = tabWidths.take(selectedIndex)
+                .sum() + with(density) { tabPadding.roundToPx() } * selectedIndex * 2
+            // 计算选中 tab 的宽度（加上 padding）
+            val width = tabWidths[selectedIndex]
+
+            indicatorOffsetX.animateTo(offset.toFloat(), tween(250))
+            indicatorWidth.animateTo(width.toFloat(), tween(250))
+        }
+    }
+    Box(
+        modifier = modifier.padding(horizontal = 16.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .horizontalScroll(scrollState)
+
+        ) {
+            tabs.forEachIndexed { index, tab ->
+                Text(
+                    text = tab,
+                    modifier = Modifier
+                        .padding(horizontal = tabPadding, vertical = 12.dp) // 包裹 Text 外
+                        .onGloballyPositioned() {
+                            val width = it.size.width
+                            if (tabWidths.size <= index) {
+                                tabWidths.add(width)
+                            } else {
+                                tabWidths[index] = width
+                            }
+                        }
+                        .clickable() {
+                            onTabSelected(index)
+                        },
+                    color = if (index == selectedIndex) Color.Black else Color.Gray,
+                    fontWeight = if (index == selectedIndex) FontWeight.Bold else FontWeight.Normal
+                )
+            }
+
+        }
+        Box(
+            modifier = Modifier
+                .offset {
+                    println(indicatorOffsetX.value.toInt())
+                    IntOffset(
+                        indicatorOffsetX.value.toInt() + with(density) { tabPadding.roundToPx() },
+                        0
+                    )
+                } // 加 padding 修正
+                .padding(top = 42.dp)
+                .width(with(density) { indicatorWidth.value.toDp() })
+                .height(2.dp)
+                .background(Color.Red) // 可替换为你的 indicatorColor
+        )
+    }
+
+}
+```
+
+2、使用
+
+```kt
+@Composable
+fun MainLayout(
+
+) {
+    var selectedIndex by remember { mutableStateOf(0) }
+    val tabs = stringArrayResource(id = R.array.home_tabs).toList();
+    val pagerState = rememberPagerState(
+        initialPage = selectedIndex,
+        initialPageOffsetFraction = 0f,
+        pageCount = { tabs.size }
+    )
+    LaunchedEffect(pagerState.currentPage) {
+        if (selectedIndex != pagerState.currentPage) {
+            selectedIndex = pagerState.currentPage
+        }
+
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(WindowInsets.statusBars.asPaddingValues())
+
+    ) {
+
+        ScrollableTabRow(
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .background(Color.White),
+            tabs = tabs,
+            selectedIndex = selectedIndex,
+            onTabSelected = { index ->
+                selectedIndex = index
+
+            }
+        )
+        Spacer(modifier = Modifier.height(1.dp))
+        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) {
+            when (selectedIndex) {
+                0 -> HomeScreen("关注")
+                1 -> HomeScreen("发现")
+                2 -> HomeScreen("同城")
+            }
+        }
+
+    }
+}
+
+```
+
 ## exoplayer封装使用
 
 自定义控制界面，可拖动、全屏切换。 倍速暂无
