@@ -15,7 +15,6 @@ export default defineConfig({
     lineNumbers: true,
     config(md) {
       md.use(timeline)
-
     },
   },
   themeConfig: {
@@ -37,11 +36,9 @@ export default defineConfig({
     outline: {
       level: [2, 6], // 显示 2 到 6 级标题作为大纲
       label: '目录' // 大纲标题
-
     },
     // 返回顶部 Return to top
     returnToTopLabel: "返回顶部",
-
     // 菜单  Menu
     sidebarMenuLabel: "菜单",
     notFound: {
@@ -58,6 +55,7 @@ export default defineConfig({
       { text: '首页', link: '/' },
       {
         text: '前端', items: [
+          { text: "代码片段", link: '/front/codeSnippet' },
           {
             text: "Vue",
             link: '/front/vue'
