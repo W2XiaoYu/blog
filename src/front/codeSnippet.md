@@ -95,3 +95,89 @@ const computedPrice=useComputed(totalPrice)
 
 <p>小计为{{computedPrice(row).value}}</p>
 ```
+
+## 防抖Debounce
+
+```js
+function debounce(fn,delay){
+    let timer=null;
+    return function(...args){
+        clearTimeout(timer);
+        timer=setTimeout(()=>{
+            fn.apply(this,args)
+        })
+    }
+}
+//加入 立即执行首次
+function debounce(fn,delay，immediate = true){
+    let timer=null;
+    return function(...args){
+        if(immediate&&!timer){
+            fn.apply(this,args)
+        }
+        clearTimeout(timer);
+        timer=setTimeout(()=>{
+            fn.apply(this,args)
+        })
+    }
+}
+
+
+
+```
+
+## 节流Throttle
+
+```js
+function throttle(fn,delay){
+    let lastTime=0;
+    return function(...args){
+        const now=Date.now();
+         if (now - lastTime >= interval) {
+            fn.apply(this, args);
+            lastTime = now;
+        }
+    }
+}
+```
+
+## 手写bind
+
+```js
+Function.prototype.MyBind=function(context){
+    if(typeof this!==='function'){
+        throw new Error("MyBind 必须是函数调用的")
+    
+    }
+    let _this=this;
+    let args=Array.prototype.slice.call(arguments,1)
+    let emptyFunction=function () {}
+    let returnFunction=function(){
+        let bindArgs=Array.prototype.slice.call(argument);
+        return _this.apply(this instanceof emptyFunction ? this : context, args.concat(bindArgs))
+    }
+
+}
+
+```
+
+## 求两数组交集（Set）
+
+```js
+function intersection(arr1,arr2){
+    const set1=new Set(arr1);
+    const set2=new Set(arr2);
+  return [...set1].filter(item=>set2.has(item));
+
+}
+```
+
+## 求两数组并集
+
+```js
+
+function union(arr1,arr2){
+    return [...new Set([...arr1,...arr2])]
+}
+
+```
