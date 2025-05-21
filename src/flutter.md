@@ -841,3 +841,77 @@ class _VideoPlayerItemState extends State<VideoPlayerItem> {
   }
 }
 ```
+
+### Windows系统托盘
+
+1. 安装`tray_manager: ^0.2.1`，安装高版本会有奇怪的bug(比如右键展示菜单后，点击其他区域应该隐藏菜单，试了好多版本都不生效。)
+
+2. 代码如下
+
+```dart
+class _MyHomePageState extends State<MyHomePage>
+    with TrayListener, WindowListener {
+  _initTray() async {
+    await trayManager.destroy();
+    // 托盘菜单
+    await trayManager.setIcon('assets/images/pc_icon.ico');
+    await trayManager.setToolTip('setToolTip');
+    await trayManager.setContextMenu(trayMenu);
+  }
+
+  final _list = [LayoutHome(), LayoutMine()];
+  int _selectedIndex = 0;
+  bool _isFullScreen = false;
+
+  @override
+  void initState() {
+    trayManager.addListener(this);
+    windowManager.addListener(this);
+    _initTray();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    windowManager.addListener(this);
+    trayManager.removeListener(this);
+    super.dispose();
+  }
+
+  @override
+  void onTrayIconMouseDown() {
+    windowManager.show();
+    windowManager.focus();
+  }
+
+  @override
+  void onTrayIconRightMouseDown() {
+    trayManager.popUpContextMenu();
+  }
+
+  @override
+  void onTrayIconRightMouseUp() {
+    // do something
+  }
+
+  @override
+  void onTrayMenuItemClick(MenuItem menuItem) {
+    print('${menuItem.toJson()}');
+    if (menuItem.key == 'show_window') {
+      windowManager.show();
+      windowManager.focus();
+    } else if (menuItem.key == 'exit_app') {
+      trayManager.destroy(); // 销毁托盘
+      exit(0); // 退出程序
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return null;
+  }
+
+}
+
+
+```
