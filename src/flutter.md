@@ -915,3 +915,41 @@ class _MyHomePageState extends State<MyHomePage>
 
 
 ```
+
+### Flutter Windows端使用desktop_multi_window 新建窗口遇到的问题
+
+如题：在使用desktop_multi_window插件新建窗口的时候可以正常新建窗口，但是发现新窗口内无法使用flutter的插件，会报错,如下：
+
+```shell
+[ERROR:flutter/runtime/dart_vm_initializer.cc(41)] Unhandled Exception: MissingPluginException(No implementation found for method VideoOutputManager.Create on channel com.alexmercerind/media_kit_video)
+#0      MethodChannel._invokeMethod (package:flutter/src/services/platform_channel.dart:313:7)
+<asynchronous suspension>
+#1      VideoControllerNative.create (package:media_kit_video/src/video_controller_native.dart:81:5)
+<asynchronous suspension>
+#2      _VideoPlayerState.initState.<anonymous closure> (package:iptv_player/video_player/video_player.dart:38:25)
+<asynchronous suspension>
+
+```
+
+参照文章[Markdown语法](https://blog.csdn.net/mchangtian/article/details/145837419)
+<br/>
+编辑`windows/runner/flutter_window.cpp`文件
+
+```cpp
+//在OnCreate() 方法添加
+SetChildContent(flutter_controller_->view()->GetNativeWindow());
+// --------OnCreate 方法添加内容---------------------------------
+DesktopMultiWindowSetWindowCreatedCallback([](void *controller) {
+auto *flutter_controller_sub_ =
+reinterpret_cast<flutter::FlutterViewController *>(controller);
+auto *registry = flutter_controller_sub_->engine();
+// call generated_plugin_registrant
+RegisterPlugins(registry);
+});
+// --------OnCreate 方法添加内容---------------------------------
+flutter_controller_->engine()->SetNextFrameCallback(& {
+this->Show();
+});
+
+
+```
