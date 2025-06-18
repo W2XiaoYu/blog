@@ -22,6 +22,10 @@ hero:
     - theme: alt
       text: Linux
       link: /linux/nginx
+    - theme: alt
+      text: Go
+      link: /back-end/go
+
 
 features:
   - title: Web

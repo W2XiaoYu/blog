@@ -411,3 +411,172 @@ go build -o patch_maker.exe patch_maker.go
 |`-new-dir`|新版本的文件目录|
 |`-output-dir`|输出差异包的目录|
 |`-global-meta`|生成差异信息json|
+
+#### 安装差量更新包
+
+以flutter Windows端为例
+
+1. 下载更新包
+
+```dart
+ final fileName = Constants.renderDownloadZip;
+String fileUrl = await getFileUrl(widget.downloadId.first ?? "");
+// 获取临时目录
+final tempDir = await getTemporaryDirectory();
+final zipPath = path.join(tempDir.path, fileName);
+await _downloader.downloadFile(
+fileUrl: fileUrl,
+fileName: fileName,
+savePath: zipPath,
+onCancel: () {},
+onProgress: (received, total, speed) {
+    //下载进度
+    setState(() {
+    _downloadProgress =
+        total > 0 ? received / total : 0;
+    _downloadStatus =
+        "下载中 ${(_downloadProgress * 100).toStringAsFixed(1)}%";
+    _networkSpeed = "${speed.toStringAsFixed(1)}KB/s";
+    });
+},
+onSuccess:(path){}//下载成功之后的回调
+)
+```
+
+2. 解压安装
+
+此步骤是在上面下载成功的回调内操作
+
+```dart
+///存放解压文件夹
+final extractDir = Directory(path.join(tempDir.path, Constants.renderUnzipDir));
+if (extractDir.existsSync()) {
+extractDir.deleteSync(recursive: true); // 清理旧文件
+}
+extractDir.createSync(recursive: true);
+setState(() {
+_extractDir = extractDir;
+});
+///开始解压 
+await for (final progress
+    in Common.extractFileWithProgress(
+zipPath,
+extractDir.path,
+)) {
+setState(() {
+    _downloadProgress = progress;
+    _downloadStatus =
+        "解压中: ${(progress * 100).toStringAsFixed(1)}%";
+    if (progress >= 1) {
+    _installTarget = true;
+    }
+});
+}
+```
+
+3. 安装
+
+```dart
+  static void updateRenderer({
+    required VoidCallback onSuccess,
+    required VoidCallback? onError,
+  }) async {
+    String? exeFile =
+        await getRenderUpdaterPath(exeName: Constants.renderUpdaterExe);
+    final appMainDir = Directory(path.dirname(Platform.resolvedExecutable));
+
+    final renderAppInstallDir =
+        path.join(appMainDir.path, Constants.renderInstallDir);
+    final renderAppExePath =
+        path.join(renderAppInstallDir, Constants.renderLauncherExe);
+    final tempDir = await getTemporaryDirectory();
+    final patchFilePath = path.join(tempDir.path, Constants.renderUnzipDir);
+    final manifestFilePath = path.join(patchFilePath, 'manifest.json');
+
+    ///尝试关闭应用
+    try {
+      final killResult = await Process.run(
+          'taskkill', ['/F', '/IM', Constants.renderLauncherExe]);
+      if (kDebugMode) {
+        print('taskkill stdout: ${killResult.stdout}');
+      }
+      if (kDebugMode) {
+        print('taskkill stderr: ${killResult.stderr}');
+      }
+      if (killResult.exitCode != 0 && killResult.exitCode != 128) {
+        // 128 表示进程未找到
+        if (kDebugMode) {
+          print(
+              '警告: 无法强制关闭 B 应用 (退出码: ${killResult.exitCode})。请确保 ${Constants.renderLauncherExe}已关闭。');
+        }
+        return;
+      }
+      await Future.delayed(const Duration(seconds: 2));
+      if (kDebugMode) {
+        print('B 应用已关闭或未运行，继续更新...');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('错误: 尝试关闭进程时发生异常: $e');
+      }
+      return;
+    }
+
+    ///验证 manifest
+    try {
+      final String manifestContent =
+          await File(manifestFilePath).readAsString();
+      final GlobalPatchManifest manifest =
+          GlobalPatchManifest.fromJson(json.decode(manifestContent));
+      if (kDebugMode) {
+        print('本地清单文件解析成功，包含 ${manifest.files.length} 个文件更新信息。');
+      }
+      // 可以在这里进一步验证 manifest 中的文件是否存在于 localPatchSourceDir
+    } catch (e) {
+      if (kDebugMode) {
+        print('错误: 无法解析本地 manifest.json 文件: $e');
+        print(
+            '请确保 $manifestFilePath 是一个有效的 JSON 文件，并且其结构与 Go PatchMetadata/GlobalPatchManifest 匹配。');
+      }
+      onError?.call();
+      return;
+    }
+
+    ///安装
+    final arguments = [
+      '-install-dir', renderAppInstallDir, // B 应用的安装根目录
+      '-manifest', manifestFilePath, // 本地下载的 manifest.json 文件的路径
+      '-download-dir', patchFilePath, // 本地补丁和新增文件所在的根目录
+    ];
+    // 以管理员权限运行
+    try {
+      final psCommand = "Start-Process -FilePath '${exeFile ?? ''}' "
+          "-ArgumentList '${arguments.join(' ')}' "
+          "-Verb RunAs -WindowStyle Hidden -Wait";
+
+      if (kDebugMode) {
+        print('执行命令: powershell -Command "$psCommand"');
+      }
+
+      final result = await Process.run('powershell.exe',
+          ['-ExecutionPolicy', 'Bypass', '-Command', psCommand]);
+
+      if (result.exitCode != 0) {
+        if (kDebugMode) {
+          print('stderr: ${result.stderr}');
+          print('stdout: ${result.stdout}');
+        }
+        onError?.call();
+        throw Exception('更新失败 (代码 ${result.exitCode})');
+      }
+      onSuccess.call();
+      infoManager.toast("更新成功！");
+    } catch (e) {
+      onError?.call();
+      if (kDebugMode) {
+        print('更新错误: $e');
+      }
+    }
+  }
+
+```
