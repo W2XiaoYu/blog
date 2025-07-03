@@ -988,7 +988,7 @@ MouseRegion(
 
 ```dart
 
-final ValueNotifier<bool> isHover = ValueNotifier(false);
+final ValueNotifier<bool> isTextHover = ValueNotifier(false);
 
 MouseRegion(
   cursor: SystemMouseCursors.click,
