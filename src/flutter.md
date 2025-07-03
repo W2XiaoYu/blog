@@ -953,3 +953,93 @@ this->Show();
 
 
 ```
+
+### ValueNotifier的运用场景
+
+使用 `ValueNotifier` 和`setState` 本质上都是在做 状态变更和刷新 UI，但它们有一些重要的区别，尤其是在交互复杂、性能要求高或组件重建频繁的桌面/Flutter Web 环境下，`ValueNotifier` 会更加优雅和高效。
+
+<br>
+在windows端，如果想实现鼠标hover效果的同时并且支持事件处理，正常思路是：
+
+```dart
+MouseRegion(
+  cursor: SystemMouseCursors.click,
+  onEnter: (e) {
+    setState(() {
+      isTextHover = true;
+    });
+  },
+  onExit: (e) {
+    setState(() {
+      isTextHover = false;
+    });
+  },
+  child: GestureDetector(
+    onTap: () {},
+    child: null,
+  ),
+),
+
+```
+
+正常思路这样的确没有问题，hover效果也是可以看到，但是会发现`GestureDetector`的事件消失了
+,这是因为 `setState`触发整个`StatefulWidget` 的 `build()` 重建，导致了点击事件的丢失。
+这时候可以改用`ValueNotifier`来解决。
+
+```dart
+
+final ValueNotifier<bool> isHover = ValueNotifier(false);
+
+MouseRegion(
+  cursor: SystemMouseCursors.click,
+  onEnter: (_) => isTextHover.value = true,
+  onExit: (_) => isTextHover.value = false,
+  child: ValueListenableBuilder<bool>(
+    valueListenable: isTextHover,
+    builder: (context, value, child) {
+      return GestureDetector(
+        onTap: () async {
+          print("点击了兑换");
+      
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius:
+                const BorderRadius.all(Radius.circular(6.0)),
+            border: Border.all(
+              color: ColorUtil.purpaseRecColor,
+              width: 1, 
+            ),
+          ),
+          height: 32,
+          width: 60,
+          child: Center(
+            child: Text(
+              LanguageUtil.confirmKey.tr,
+              style: TextStyle(
+                fontSize: 12,
+                color: !isTextHover.value
+                    ? ColorUtil.loginDialogTextColor
+                    : ColorUtil.loginDialogHoverTextColor,
+                fontFamily: "微软雅黑",
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  ),
+),
+```
+
+核心区别总结：
+
+| 对比项 | `setState` |`ValueNotifier`|
+|------|------|------|
+| 触发范围 | 触发整个 `StatefulWidget` 的 `build()` 重建 |只触发 `ValueListenableBuilder` 区域刷新|
+| 适用场景 | 简单状态（页面级状态切换） |局部状态（如 hover、开关、单个按钮状态）|
+| 性能 | 会重建整棵 widget 树（当前 widget） |只重建绑定该状态的组件，性能更优|
+| 逻辑清晰度| 状态分散在 widget 树中 |状态集中，可封装复用|
+| 点击与 hover 不兼容时 | 	容易在 `setState()` 导致点击丢失 |状态隔离，互不干扰，体验稳定|
+
