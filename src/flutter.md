@@ -1043,3 +1043,113 @@ MouseRegion(
 | 逻辑清晰度| 状态分散在 widget 树中 |状态集中，可封装复用|
 | 点击与 hover 不兼容时 | 	容易在 `setState()` 导致点击丢失 |状态隔离，互不干扰，体验稳定|
 
+### 在flutter中解压文件名字乱码问题
+
+flutter里常用的解压软件是`archive`,它默认支持utf-8的,而window上的编码格式是GBK的,就会导致,在window系统上压缩的文件,解压后中文是乱码的.
+但是archive不支持配置编码,所以我们就需要手动去处理文件名的编码问题.这时候使用到`charset_converter`来处理编码问题.
+```dart
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:archive/archive.dart';
+import 'package:archive/archive_io.dart';
+import 'package:path/path.dart' as path;
+import 'package:charset_converter/charset_converter.dart';
+
+class UnZip {
+  static Future<bool> unzip({
+    required String zipPath,
+    required String outPath,
+    Function(double progress)? onProgress, // 进度回调函数
+  }) async {
+    final zipFile = File(zipPath);
+    if (!zipFile.existsSync()) return false;
+
+    try {
+      // 计算ZIP文件总大小（用于进度计算）
+      final totalSize = await _calculateTotalUncompressedSize(zipPath);
+      int processedSize = 0;
+
+      // 创建输入流读取ZIP文件
+      final inputStream = InputFileStream(zipPath);
+
+      // 使用ZipDecoder处理流数据
+      final archive = ZipDecoder().decodeStream(inputStream);
+
+      // 遍历归档中的每个文件/目录
+      for (final file in archive) {
+        Uint8List? originalNameBytes;
+        String decodedName;
+
+        try {
+          //file.name 是utf-8的字符串
+          final brokenName = file.name;
+          final originalNameBytes = latin1.encode(file.name);
+          decodedName = await CharsetConverter.decode(
+            'gb18030',
+            originalNameBytes,
+          );
+        } catch (e) {
+          print("名字解码失败，${e.toString()}");
+          decodedName = file.name;
+        }
+
+        final filePath = path.join(outPath, decodedName);
+
+        if (file.isFile) {
+          // 创建输出文件流
+          final outputStream = OutputFileStream(filePath);
+
+          // 使用流式写入文件内容
+          file.writeContent(outputStream);
+
+          // 更新已处理大小
+          processedSize += file.size;
+
+          // 计算并回调进度（0.0-1.0）
+          if (onProgress != null && totalSize > 0) {
+            final progress = processedSize / totalSize;
+            onProgress(progress);
+          }
+
+          // 关闭输出流
+          outputStream.closeSync();
+        } else {
+          // 创建目录
+          await Directory(filePath).create(recursive: true);
+        }
+      }
+
+      // 确保进度达到100%
+      onProgress?.call(1.0);
+
+      return true;
+    } catch (e) {
+      print("解压失败: $e");
+      return false;
+    }
+  }
+
+  // 计算ZIP文件解压后的总大小
+  static Future<int> _calculateTotalUncompressedSize(String zipPath) async {
+    try {
+      final bytes = await File(zipPath).readAsBytes();
+      final archive = ZipDecoder().decodeBytes(bytes);
+
+      int totalSize = 0;
+      for (final file in archive) {
+        if (file.isFile) {
+          totalSize += file.size;
+        }
+      }
+
+      return totalSize;
+    } catch (e) {
+      print("计算总大小失败: $e");
+      return 0;
+    }
+  }
+}
+
+
+```
