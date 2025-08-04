@@ -1041,5 +1041,53 @@ MouseRegion(
 | 适用场景 | 简单状态（页面级状态切换） |局部状态（如 hover、开关、单个按钮状态）|
 | 性能 | 会重建整棵 widget 树（当前 widget） |只重建绑定该状态的组件，性能更优|
 | 逻辑清晰度| 状态分散在 widget 树中 |状态集中，可封装复用|
-| 点击与 hover 不兼容时 | 	容易在 `setState()` 导致点击丢失 |状态隔离，互不干扰，体验稳定|
+| 点击与 hover 不兼容时 |  容易在 `setState()` 导致点击丢失 |状态隔离，互不干扰，体验稳定|
 
+### Windows端输入框限制为英文
+
+在移动端中，我们可以根据`keyboardType`来使用不同的键盘。但是在Window端这样写就没有任何作用了，因为Window端是主要是键盘概念。这时候我们就需要指定键盘：
+
+1. 指定为英文键盘(美式键盘)
+
+```cpp
+HKL hkl = LoadKeyboardLayout(L"00000409", KLF_ACTIVATE);
+if (hkl != NULL) {
+    HKL currentLayout = GetKeyboardLayout(0);
+    if (currentLayout != hkl) {
+        ActivateKeyboardLayout(hkl, KLF_SETFORPROCESS);
+    }
+    result->Success(flutter::EncodableValue(true));
+} else {
+    result->Error("load_layout_failed", "无法加载英文输入法布局");
+}
+
+```
+
+2. 把当前输入法改为英文
+
+```cpp
+HWND hwnd = GetForegroundWindow();
+if (!hwnd) {
+    result->Error("input_error", "Failed to get foreground window");
+    return;
+}
+
+HIMC imc = ImmGetContext(hwnd);
+if (!imc) {
+    result->Error("input_error", "Failed to get IME context");
+    return;
+}
+
+bool success = ImmSetConversionStatus(imc, IME_CMODE_ALPHANUMERIC,
+                                      IME_SMODE_NONE);
+
+ImmReleaseContext(hwnd, imc);
+
+if (success) {
+    result->Success(flutter::EncodableValue(true));
+} else {
+    result->Error("input_error", "Failed to set IME to English mode");
+}
+```
+
+以上方法都是在Windows工程下注册的方法，后在flutter端调用的。
