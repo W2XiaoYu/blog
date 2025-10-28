@@ -181,3 +181,41 @@ function union(arr1,arr2){
 }
 
 ```
+
+## 手写Promise.all
+
+```js
+//命名为myAll 避免覆盖原有的all方法
+Promise.myAll=function (promises){
+    //返回一个新的 Promise
+    return New Promise((resolve, reject)=>{
+        //开始边界处理
+        if(!Array.isArray(promises)){
+            return reject(new TypeError('Arguments must be an array'))
+        }
+        if(promises.length===0){
+            return resolve([])
+        }
+        let result=[];
+        let count=0;
+        for(let i=0;i<promises.length;i++){
+            const item=promises[i];
+            Promise.resolve(item).then(
+                (res)=>{
+                    result[i]=res;
+                    count++;
+                    if(count===promises.length){
+                        //所有都成功了就直接返回list
+                        resolve(result)
+                    }
+                }
+            ).catch(err=>{
+                //只要有一个错误 就直接返回
+                reject(error);
+            })
+        }
+    })
+
+}
+
+```
