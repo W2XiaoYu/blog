@@ -1,68 +1,3 @@
-<template>
-    <div class="color-converter">
-        <h2 class="title" style="border: none;">颜色格式转换</h2>
-
-        <div class="input-container">
-            <input v-model="colorInput" type="text" class="input-box"
-                placeholder="支持 Hex(#RRGGBB)、RGBA、ARGB(#AARRGGBB)" />
-            <input type="color" v-model="colorInput" />
-        </div>
-
-        <button class="convert-btn" @click="convertColor">
-            <span v-if="!isConverting">转换</span>
-            <span v-else class="loading-pulse">转换中...</span>
-        </button>
-
-        <!-- 输入格式显示 -->
-        <div v-if="formattedOutput" class="result-container">
-            <div class="output-wrapper is-input">
-                <span>输入格式: {{ formattedOutput.inputType }}</span>
-                <div class="color-preview" :style="{
-                    backgroundColor: formattedOutput.backgroundColor,
-                    borderColor: formattedOutput.borderColor
-                }" />
-            </div>
-            <div class="output-wrapper is-input">
-                <span>输入值: {{ formattedOutput.formatted }}</span>
-            </div>
-        </div>
-
-        <p v-else class="info-text">请输入有效的颜色格式</p>
-
-        <!-- 转换结果 -->
-        <div v-if="convertedColor" class="converted-container">
-            <div class="output-wrapper">
-                <span>Hex: {{ convertedColor.hex }}</span>
-                <button class="copy-btn" @click="copyToClipboard(convertedColor.hex, 'hex')"
-                    :class="{ 'copied': copiedState.hex }">
-                    {{ copiedState.hex ? '✓ 已复制' : '📋 复制' }}
-                </button>
-            </div>
-            <div class="output-wrapper">
-                <span>RGBA: {{ convertedColor.rgba }}</span>
-                <button class="copy-btn" @click="copyToClipboard(convertedColor.rgba, 'rgba')"
-                    :class="{ 'copied': copiedState.rgba }">
-                    {{ copiedState.rgba ? '✓ 已复制' : '📋 复制' }}
-                </button>
-            </div>
-            <div class="output-wrapper">
-                <span>ARGB: {{ convertedColor.argb }}</span>
-                <button class="copy-btn" @click="copyToClipboard(convertedColor.argb, 'argb')"
-                    :class="{ 'copied': copiedState.argb }">
-                    {{ copiedState.argb ? '✓ 已复制' : '📋 复制' }}
-                </button>
-            </div>
-            <div class="output-wrapper">
-                <span>Hex32: {{ convertedColor.hex32 }}</span>
-                <button class="copy-btn" @click="copyToClipboard(convertedColor.hex32, 'hex32')"
-                    :class="{ 'copied': copiedState.hex32 }">
-                    {{ copiedState.hex32 ? '✓ 已复制' : '📋 复制' }}
-                </button>
-            </div>
-        </div>
-    </div>
-</template>
-
 <script setup>
 import { ref } from 'vue';
 
@@ -208,187 +143,411 @@ const decimalToHex = (decimal) => {
 };
 </script>
 
-<style scoped>
-/* 整体容器 */
-.color-converter {
+<template>
+    <div class="color-page">
+        <div class="container">
+            <h1>颜色格式转换</h1>
+            <p class="description">支持 Hex、RGBA、ARGB 等格式互转</p>
 
-    max-width: 500px;
-    margin: 0 auto;
-    padding: 1.5rem;
-    border-radius: 8px;
-    background-color: var(--vp-c-bg-soft);
-    border: 1px solid var(--vp-c-divider);
-    box-shadow: var(--vp-shadow-1);
-    /* 响应式布局，适应不同屏幕宽度 */
-    width: 100%;
-    max-width: 500px;
-    box-sizing: border-box;
-    margin-top: 20px;
+            <div class="form-container">
+                <form @submit.prevent="convertColor" class="color-form">
+                    <div class="form-row">
+                        <label for="colorInput">颜色值</label>
+                        <div class="input-group">
+                            <input
+                                id="colorInput"
+                                v-model="colorInput"
+                                type="text"
+                                placeholder="支持 Hex(#RRGGBB)、RGBA、ARGB(#AARRGGBB)"
+                            />
+                            <input type="color" v-model="colorInput" class="color-picker" />
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" :disabled="isConverting" class="btn-primary">
+                            {{ isConverting ? '转换中...' : '转换' }}
+                        </button>
+                    </div>
+                </form>
+
+                <!-- 输入格式显示 -->
+                <div v-if="formattedOutput" class="info-section">
+                    <h3>输入信息</h3>
+                    <div class="color-display">
+                        <div class="color-swatch" :style="{
+                            backgroundColor: formattedOutput.backgroundColor,
+                            borderColor: formattedOutput.borderColor
+                        }" />
+                        <div class="color-info">
+                            <div class="info-row">
+                                <span class="label">格式类型</span>
+                                <span class="value">{{ formattedOutput.inputType }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">输入值</span>
+                                <span class="value code">{{ formattedOutput.formatted }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 转换结果 -->
+                <div v-if="convertedColor" class="result-section">
+                    <h3>转换结果</h3>
+                    <div class="result-list">
+                        <div class="result-item">
+                            <div class="result-label">Hex</div>
+                            <div class="result-value">{{ convertedColor.hex }}</div>
+                            <button
+                                @click="copyToClipboard(convertedColor.hex, 'hex')"
+                                :class="['copy-btn', { 'copied': copiedState.hex }]"
+                            >
+                                {{ copiedState.hex ? '✓' : '复制' }}
+                            </button>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">RGBA</div>
+                            <div class="result-value">{{ convertedColor.rgba }}</div>
+                            <button
+                                @click="copyToClipboard(convertedColor.rgba, 'rgba')"
+                                :class="['copy-btn', { 'copied': copiedState.rgba }]"
+                            >
+                                {{ copiedState.rgba ? '✓' : '复制' }}
+                            </button>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">ARGB</div>
+                            <div class="result-value">{{ convertedColor.argb }}</div>
+                            <button
+                                @click="copyToClipboard(convertedColor.argb, 'argb')"
+                                :class="['copy-btn', { 'copied': copiedState.argb }]"
+                            >
+                                {{ copiedState.argb ? '✓' : '复制' }}
+                            </button>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">Hex32</div>
+                            <div class="result-value">{{ convertedColor.hex32 }}</div>
+                            <button
+                                @click="copyToClipboard(convertedColor.hex32, 'hex32')"
+                                :class="['copy-btn', { 'copied': copiedState.hex32 }]"
+                            >
+                                {{ copiedState.hex32 ? '✓' : '复制' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <p v-if="!formattedOutput && !convertedColor" class="empty-hint">
+                    请输入颜色值进行转换
+                </p>
+            </div>
+        </div>
+    </div>
+</template>
+
+<style scoped>
+.color-page {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
 }
 
-/* 标题 */
-.title {
-    margin-top: 0;
-    margin-bottom: 1.25rem;
-    font-size: 1.25rem;
-    font-weight: 600;
+.container h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
     color: var(--vp-c-text-1);
 }
 
-/* 输入容器 */
-.input-container {
+.description {
+    color: var(--vp-c-text-2);
+    margin-bottom: 2rem;
+}
+
+.form-container {
+    background: var(--vp-c-bg-soft);
+    border: 1px solid var(--vp-c-divider);
+    border-radius: 8px;
+    padding: 2rem;
+}
+
+.color-form {
+    margin-bottom: 0;
+    padding-bottom: 1.5rem;
+}
+
+.form-row {
+    margin-bottom: 1rem;
+}
+
+.form-row label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--vp-c-text-1);
+}
+
+.input-group {
     display: flex;
     gap: 0.75rem;
-    margin-bottom: 1rem;
-    /* 响应式布局，输入框和颜色选择器在小屏幕上换行 */
-    flex-wrap: wrap;
 }
 
-/* 文本输入框 */
-.input-box {
+.input-group input[type="text"] {
     flex: 1;
-    padding: 0.5rem 0.75rem;
+    padding: 0.625rem 0.875rem;
     border: 1px solid var(--vp-c-divider);
-    border-radius: 6px;
-    background-color: var(--vp-c-bg);
+    border-radius: 4px;
+    background: var(--vp-c-bg);
     color: var(--vp-c-text-1);
-    font-family: var(--vp-font-family-base);
-    transition: border-color 0.25s;
-    /* 小屏幕上输入框宽度为 100% */
-    width: 100%;
-    max-width: 300px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s;
 }
 
-.input-box:focus {
+.input-group input[type="text"]:focus {
     outline: none;
-    border-color: var(--vp-c-brand);
+    border-color: var(--vp-c-brand-1);
 }
 
-/* 颜色选择器 */
-input[type="color"] {
-    width: 40px;
+.input-group input[type="text"]::placeholder {
+    color: var(--vp-c-text-3);
+}
+
+.color-picker {
+    width: 48px;
     height: 40px;
-    padding: 2px;
-    border-radius: 6px;
+    padding: 4px;
     border: 1px solid var(--vp-c-divider);
+    border-radius: 4px;
     background: var(--vp-c-bg);
     cursor: pointer;
 }
 
-input[type="color"]::-webkit-color-swatch {
-    border-radius: 4px;
-    border: none;
+.color-picker::-webkit-color-swatch-wrapper {
+    padding: 0;
 }
 
-/* 转换按钮 */
-.convert-btn {
-    width: 100%;
-    padding: 0.5rem;
-    margin-bottom: 1.5rem;
+.color-picker::-webkit-color-swatch {
     border: none;
-    border-radius: 6px;
-    background-color: var(--vp-button-brand-bg);
-    color: var(--vp-button-brand-text);
+    border-radius: 2px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.btn-primary {
+    padding: 0.625rem 1.25rem;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.25s;
+    transition: all 0.2s;
+    background: var(--vp-c-brand-1);
+    color: #fff;
 }
 
-.convert-btn:hover {
-    background-color: var(--vp-button-brand-hover-bg);
+.btn-primary:hover:not(:disabled) {
+    background: var(--vp-c-brand-2);
 }
 
-/* 结果容器 */
-.result-container,
-.converted-container {
-    margin-top: 1rem;
-    padding: 1rem;
-    border-radius: 6px;
-    background-color: var(--vp-c-bg-soft-up);
-    border: 1px solid var(--vp-c-divider-light);
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
-/* 输出项容器 */
-.output-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.75rem;
-    padding: 0.5rem;
-    border-radius: 4px;
-    background-color: var(--vp-c-bg);
-    /* 响应式布局，在小屏幕上文本和按钮换行 */
-    flex-wrap: wrap;
+.info-section,
+.result-section {
+    border-top: 1px solid var(--vp-c-divider);
+    padding-top: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
-.output-wrapper:last-child {
+.info-section:last-child,
+.result-section:last-child {
     margin-bottom: 0;
 }
 
-/* 输入格式显示的输出项容器 */
-.output-wrapper.is-input {
-    background-color: transparent;
-    padding-left: 0;
-    padding-right: 0;
+h3 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    color: var(--vp-c-text-1);
+    font-weight: 600;
 }
 
-/* 颜色预览框 */
-.color-preview {
-    width: 24px;
-    height: 24px;
-    border-radius: 4px;
-    border-width: 1px;
-    border-style: solid;
+.color-display {
+    display: flex;
+    gap: 1.5rem;
+    padding: 1.25rem;
+    background: var(--vp-c-bg);
+    border: 1px solid var(--vp-c-divider);
+    border-radius: 8px;
 }
 
-/* 复制按钮 */
-.copy-btn {
-    padding: 0.25rem 0.5rem;
-    margin-left: 0.5rem;
-    border: none;
-    border-radius: 4px;
-    background-color: var(--vp-c-bg-alt);
+.color-swatch {
+    width: 80px;
+    height: 80px;
+    min-width: 80px;
+    border-radius: 8px;
+    border: 1px solid;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.color-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    justify-content: center;
+}
+
+.info-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.info-row .label {
     color: var(--vp-c-text-2);
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+}
+
+.info-row .value {
+    color: var(--vp-c-text-1);
+    font-size: 0.9375rem;
+    font-weight: 500;
+}
+
+.info-row .value.code {
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    color: var(--vp-c-brand-1);
+}
+
+.result-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+}
+
+.result-item {
+    display: grid;
+    grid-template-columns: 70px 1fr auto;
+    gap: 1.25rem;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    background: var(--vp-c-bg);
+    border: 1px solid var(--vp-c-divider);
+    border-radius: 6px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.result-item:hover {
+    border-color: var(--vp-c-brand-1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.result-label {
+    font-weight: 600;
+    color: var(--vp-c-text-2);
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.result-value {
+    color: var(--vp-c-text-1);
+    font-size: 0.875rem;
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    word-break: break-all;
+    line-height: 1.6;
+}
+
+.copy-btn {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--vp-c-divider);
+    border-radius: 4px;
+    background: var(--vp-c-bg);
+    color: var(--vp-c-text-1);
+    font-size: 0.75rem;
     cursor: pointer;
     transition: all 0.2s;
-    /* 小屏幕上复制按钮宽度为 100% */
-    width: 100%;
-    max-width: 100px;
-    margin-top: 0.25rem;
+    white-space: nowrap;
 }
 
 .copy-btn:hover {
-    background-color: var(--vp-c-gray-light-4);
-    color: var(--vp-c-text-1);
+    border-color: var(--vp-c-brand-1);
+    color: var(--vp-c-brand-1);
 }
 
 .copy-btn.copied {
-    background-color: var(--vp-c-green-light);
-    color: var(--vp-c-green-darker);
+    background: var(--vp-c-brand-1);
+    border-color: var(--vp-c-brand-1);
+    color: #fff;
 }
 
-/* 提示文本 */
-.info-text {
-    margin: 1rem 0;
-    color: var(--vp-c-text-2);
+.empty-hint {
     text-align: center;
+    color: var(--vp-c-text-2);
+    padding: 3rem 2rem;
+    font-size: 0.9375rem;
+    border-top: 1px solid var(--vp-c-divider);
+    margin-top: 1.5rem;
 }
 
-/* 加载动画 */
-.loading-pulse {
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-
-    0%,
-    100% {
-        opacity: 1;
+@media (max-width: 768px) {
+    .color-page {
+        margin: 1rem auto;
     }
 
-    50% {
-        opacity: 0.6;
+    .container h1 {
+        font-size: 1.5rem;
+    }
+
+    .form-container {
+        padding: 1.5rem;
+    }
+
+    .input-group {
+        flex-direction: column;
+    }
+
+    .color-picker {
+        width: 100%;
+    }
+
+    .color-display {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .color-swatch {
+        width: 100%;
+        height: 120px;
+    }
+
+    .color-info {
+        width: 100%;
+    }
+
+    .result-item {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+
+    .result-label {
+        font-weight: 700;
+    }
+
+    .copy-btn {
+        width: 100%;
+        padding: 0.5rem;
     }
 }
 </style>

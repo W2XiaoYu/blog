@@ -66,6 +66,7 @@ export default defineConfig({
         ]
       },
       { text: 'Flutter', link: '/flutter' },
+      { text: '挪车二维码', link: '/qrcode' },
     ],
     sidebar: [
       {

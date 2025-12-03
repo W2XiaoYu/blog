@@ -24,16 +24,19 @@ provide('toggle-appearance', async ({ clientX: x, clientY: y }: MouseEvent) => {
         )}px at ${x}px ${y}px)`
     ]
 
-    await document.startViewTransition(async () => {
+    const transition = document.startViewTransition(async () => {
         isDark.value = !isDark.value
         await nextTick()
-    }).ready
+    })
+
+    await transition.ready
 
     document.documentElement.animate(
         { clipPath: isDark.value ? clipPath.reverse() : clipPath },
         {
             duration: 300,
-            easing: 'ease-in',
+            easing: 'ease-out',
+            fill: 'forwards',
             pseudoElement: `::view-transition-${isDark.value ? 'old' : 'new'}(root)`
         }
     )
@@ -59,6 +62,10 @@ provide('toggle-appearance', async ({ clientX: x, clientY: y }: MouseEvent) => {
 ::view-transition-new(root) {
     animation: none;
     mix-blend-mode: normal;
+}
+
+.dark::view-transition-old(root) {
+    animation: none;
 }
 
 ::view-transition-old(root),
