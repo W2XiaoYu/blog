@@ -12,7 +12,7 @@ interface ParkingInfo {
 
 const parkingInfo = ref<ParkingInfo>({
     name: '停车二维码',
-    baseUrl: 'http://117.72.94.131',
+    baseUrl: 'http://117.72.94.131/wongcong/',
     tel: '',
     plate: '',
     barkCode: ''
