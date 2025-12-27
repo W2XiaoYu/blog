@@ -544,7 +544,7 @@ class _DouyinHomeState extends State<DouyinHome> {
 }
 ```
 
-2. 上下滑动播放视频
+1. 上下滑动播放视频
 
 ```dart
 class VideoPlayerItem extends StatefulWidget {
@@ -1047,6 +1047,7 @@ MouseRegion(
 
 flutter里常用的解压软件是`archive`,它默认支持utf-8的,而window上的编码格式是GBK的,就会导致,在window系统上压缩的文件,解压后中文是乱码的.
 但是archive不支持配置编码,所以我们就需要手动去处理文件名的编码问题.这时候使用到`charset_converter`来处理编码问题.
+
 ```dart
 import 'dart:convert';
 import 'dart:io';
@@ -1153,6 +1154,7 @@ class UnZip {
 
 
 ```
+
 ### Windows端输入框限制为英文
 
 在移动端中，我们可以根据`keyboardType`来使用不同的键盘。但是在Window端这样写就没有任何作用了，因为Window端是主要是键盘概念。这时候我们就需要指定键盘：
@@ -1173,7 +1175,7 @@ if (hkl != NULL) {
 
 ```
 
-2. 把当前输入法改为英文
+1. 把当前输入法改为英文
 
 ```cpp
 HWND hwnd = GetForegroundWindow();
@@ -1201,3 +1203,261 @@ if (success) {
 ```
 
 以上方法都是在Windows工程下注册的方法，后在flutter端调用的。
+
+### 文件切片上传（前端部分）
+>
+> 相关文档：[Go 后端实现](./back-end/go.md)
+
+
+
+flutter端使用的库
+
+```yaml
+  file_picker: ^10.3.8
+  crypto: ^3.0.7
+  dio: ^5.7.0
+```
+
+UI层就不再赘述了
+
+```dart
+import 'dart:io';
+
+import 'package:crypto/crypto.dart';
+import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// 文件上传状态模型
+class UploadState {
+  final PlatformFile? selectedFile;
+  final bool isUploading;
+  final String? uploadMessage;
+  final double uploadProgress; // 上传进度 0-1
+  final String? fileHash; // 文件哈希值
+  final String? uploadedFilePath; // 上传成功后的文件路径
+  final int uploadedChunks; // 已上传的分片数
+  final int totalChunks; // 总分片数
+
+  UploadState({
+    this.selectedFile,
+    this.isUploading = false,
+    this.uploadMessage,
+    this.uploadProgress = 0.0,
+    this.fileHash,
+    this.uploadedFilePath,
+    this.uploadedChunks = 0,
+    this.totalChunks = 0,
+  });
+
+  UploadState copyWith({
+    PlatformFile? selectedFile,
+    bool? isUploading,
+    String? uploadMessage,
+    double? uploadProgress,
+    String? fileHash,
+    String? uploadedFilePath,
+    int? uploadedChunks,
+    int? totalChunks,
+  }) {
+    return UploadState(
+      selectedFile: selectedFile ?? this.selectedFile,
+      isUploading: isUploading ?? this.isUploading,
+      uploadMessage: uploadMessage ?? this.uploadMessage,
+      uploadProgress: uploadProgress ?? this.uploadProgress,
+      fileHash: fileHash ?? this.fileHash,
+      uploadedFilePath: uploadedFilePath ?? this.uploadedFilePath,
+      uploadedChunks: uploadedChunks ?? this.uploadedChunks,
+      totalChunks: totalChunks ?? this.totalChunks,
+    );
+  }
+}
+
+// 文件上传 Notifier
+class UploadNotifier extends Notifier<UploadState> {
+  late final Dio _dio;
+
+  @override
+  UploadState build() {
+    // 初始化 Dio
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: 'http://localhost:8080',
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 30),
+      ),
+    );
+    return UploadState();
+  }
+
+  // 选择文件
+  Future<void> selectFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        state = state.copyWith(
+          selectedFile: result.files.first,
+          uploadMessage: null,
+          uploadProgress: 0.0,
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(uploadMessage: '文件选择失败: $e');
+    }
+  }
+
+  // 清除选择的文件
+  void clearFile() {
+    state = UploadState();
+  }
+
+  // 上传文件（切片上传）
+  Future<void> uploadFile() async {
+    if (state.selectedFile == null) {
+      state = state.copyWith(uploadMessage: '请先选择文件');
+      return;
+    }
+
+    state = state.copyWith(
+      isUploading: true,
+      uploadMessage: null,
+      uploadProgress: 0.0,
+    );
+
+    try {
+      // 读取文件字节
+      final Uint8List bytes;
+      if (kIsWeb) {
+        bytes = state.selectedFile!.bytes!;
+      } else {
+        bytes = await File(state.selectedFile!.path!).readAsBytes();
+      }
+
+      // 计算文件哈希值
+      final fileHash = sha256.convert(bytes).toString();
+      debugPrint('文件哈希值: $fileHash');
+
+      state = state.copyWith(fileHash: fileHash);
+
+      // 分片配置
+      const int chunkSize = 2 * 1024 * 1024; // 2MB 每片
+      final int totalSize = bytes.length;
+      final int totalChunks = (totalSize / chunkSize).ceil();
+
+      debugPrint('文件总大小: $totalSize bytes');
+      debugPrint('总分片数: $totalChunks');
+
+      // 设置总分片数
+      state = state.copyWith(totalChunks: totalChunks);
+
+      // 逐片上传
+      String? uploadedPath;
+      for (int i = 0; i < totalChunks; i++) {
+        final int start = i * chunkSize;
+        final int end = (start + chunkSize < totalSize)
+            ? start + chunkSize
+            : totalSize;
+
+        final Uint8List chunkData = bytes.sublist(start, end);
+
+        // 计算分片哈希值
+        final chunkHash = sha256.convert(chunkData).toString();
+
+        final response = await _uploadChunk(
+          fileName: state.selectedFile!.name,
+          fileHash: fileHash,
+          chunkIndex: i,
+          totalChunks: totalChunks,
+          file: chunkData,
+          chunkHash: chunkHash,
+        );
+
+        // 更新进度
+        final progress = (i + 1) / totalChunks;
+        state = state.copyWith(
+          uploadProgress: progress,
+          uploadedChunks: i + 1,
+        );
+
+        debugPrint(
+          '已上传: ${i + 1}/$totalChunks 片 (${(progress * 100).toStringAsFixed(1)}%)',
+        );
+
+        // 检查是否全部完成
+        if (response != null && response['allCompleted'] == true) {
+          uploadedPath = response['path'];
+          debugPrint('文件合并完成！文件路径: $uploadedPath');
+        }
+      }
+
+      // 上传完成
+      state = state.copyWith(
+        isUploading: false,
+        uploadProgress: 1.0,
+        uploadedFilePath: uploadedPath,
+        uploadMessage: uploadedPath != null
+            ? '文件上传成功！\n文件名: ${state.selectedFile!.name}\n保存路径: $uploadedPath'
+            : '文件上传成功: ${state.selectedFile!.name}',
+      );
+    } catch (e) {
+      debugPrint('上传失败: $e');
+      state = state.copyWith(isUploading: false, uploadMessage: '上传失败: $e');
+    }
+  }
+
+  // 上传单个分片
+  Future<Map<String, dynamic>?> _uploadChunk({
+    required String fileName,
+    required String fileHash,
+    required int chunkIndex,
+    required int totalChunks,
+    required Uint8List file,
+    required String chunkHash,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        'file': MultipartFile.fromBytes(
+          file,
+          filename: 'chunk_$chunkIndex.part',
+        ),
+        'filename': fileName,
+        'chunkIndex': chunkIndex.toString(),
+        'totalChunks': totalChunks.toString(),
+        'chunkHash': chunkHash,
+        'fileHash': fileHash,
+      });
+
+      final response = await _dio.post(
+        '/upload',
+        data: formData,
+        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
+        onSendProgress: (sent, total) {
+          // 可以在这里添加更细粒度的进度更新
+          debugPrint('分片 $chunkIndex 上传进度: $sent/$total');
+        },
+      );
+      debugPrint('分片 $chunkIndex 上传响应: ${response.data}');
+
+      // 返回响应数据
+      if (response.data is Map<String, dynamic>) {
+        return response.data as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('分片 $chunkIndex 上传失败: $e');
+      rethrow;
+    }
+  }
+}
+
+// Provider 定义
+final uploadProvider = NotifierProvider<UploadNotifier, UploadState>(() {
+  return UploadNotifier();
+});
+
+```

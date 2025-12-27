@@ -1,6 +1,10 @@
 
 ## Go语言
 
+> 💡 **说明**：本节内容为演示功能使用，示例代码中未包含 OSS 上传功能。实际生产环境中建议结合对象存储服务使用。
+>
+> 相关文档：[Flutter 前端实现](../flutter.md)
+
 ### Go语言脚本
 
 #### 生成差量更新包
@@ -390,7 +394,7 @@ func getVersion(filepath string) string {
 
 ```
 
-2. 使用
+1. 使用
 
 ```shell
 //打包成exe文件 
@@ -443,7 +447,7 @@ onSuccess:(path){}//下载成功之后的回调
 )
 ```
 
-2. 解压安装
+1. 解压安装
 
 此步骤是在上面下载成功的回调内操作
 
@@ -474,7 +478,7 @@ setState(() {
 }
 ```
 
-3. 安装
+1. 安装
 
 ```dart
   static void updateRenderer({
@@ -578,5 +582,263 @@ setState(() {
       }
     }
   }
+
+```
+
+#### 文件切片上传（服务端）
+
+```go
+package main
+
+import (
+ "crypto/sha256"
+ "encoding/hex"
+ "fmt"
+ "io"
+ "os"
+ "path/filepath"
+ "strconv"
+
+ "github.com/gin-gonic/gin"
+)
+
+// 文件上传的基础路径
+var basePath = "./uploads"
+
+func main() {
+ // 创建 Gin 路由器（使用默认中间件：日志和恢复）
+ router := gin.Default()
+
+ // 配置静态文件服务：将 /uploads 路径映射到 ./uploads 目录
+ // 访问示例：http://localhost:8080/uploads/filename.mp4
+ router.Static("/uploads", "./uploads")
+
+ // 健康检查接口
+ router.GET("/ping", func(c *gin.Context) {
+  c.JSON(200, gin.H{
+   "message": "pong",
+  })
+ })
+
+ // 文件分片上传接口
+ // 接收参数：file(分片文件), filename(原始文件名), chunkIndex(分片索引),
+ //          totalChunks(总分片数), chunkHash(分片哈希), fileHash(文件哈希)
+ router.POST("/upload", func(ctx *gin.Context) {
+  // ========== 第一步：接收并解析请求参数 ==========
+
+  // 读取上传的分片文件
+  file, err := ctx.FormFile("file")
+  if err != nil {
+   ctx.String(400, "file required")
+   return
+  }
+
+  // 读取表单参数
+  filename := ctx.PostForm("filename")                      // 原始完整文件名
+  chunkIndexStr := ctx.DefaultPostForm("chunkIndex", "0")   // 当前分片索引（默认0）
+  totalChunksStr := ctx.DefaultPostForm("totalChunks", "0") // 总分片数（默认0）
+  chunkHash := ctx.DefaultPostForm("chunkHash", "")         // 当前分片的SHA256哈希值（可选）
+  fileHash := ctx.DefaultPostForm("fileHash", "")           // 完整文件的SHA256哈希值（必填）
+
+  // ========== 第二步：参数校验 ==========
+
+  // 校验文件名
+  if filename == "" {
+   ctx.String(400, "filename required")
+   return
+  }
+
+  // 校验文件哈希
+  if fileHash == "" {
+   ctx.String(400, "fileHash required")
+   return
+  }
+
+  // 转换并校验分片索引
+  chunkIndex, err := strconv.Atoi(chunkIndexStr)
+  if err != nil || chunkIndex < 0 {
+   ctx.String(400, "invalid chunkIndex")
+   return
+  }
+
+  // 转换并校验总分片数
+  totalChunks, err := strconv.Atoi(totalChunksStr)
+  if err != nil || totalChunks <= 0 {
+   ctx.String(400, "invalid totalChunks")
+   return
+  }
+
+  // 校验索引范围
+  if chunkIndex >= totalChunks {
+   ctx.String(400, "chunkIndex out of range")
+   return
+  }
+
+  // ========== 第三步：创建临时目录 ==========
+
+  // 使用文件哈希作为临时目录名，确保同一文件的分片存储在同一目录
+  // 目录结构：./uploads/{fileHash}/0.part, 1.part, ...
+  fileDir := filepath.Join(basePath, fileHash)
+  err = os.MkdirAll(fileDir, 0755)
+  if err != nil {
+   ctx.String(500, "create dir failed:"+err.Error())
+   return
+  }
+
+  // ========== 第四步：保存当前分片 ==========
+
+  // 分片文件命名格式：{chunkIndex}.part（如 0.part, 1.part）
+  chunkPath := filepath.Join(fileDir, fmt.Sprintf("%d.part", chunkIndex))
+  err = ctx.SaveUploadedFile(file, chunkPath)
+  if err != nil {
+   ctx.String(500, "save chunk failed:"+err.Error())
+   return
+  }
+
+  // ========== 第五步：校验当前分片的完整性 ==========
+
+  // 如果客户端提供了分片哈希值，则进行校验
+  if chunkHash != "" {
+   // 打开刚保存的分片文件
+   chunkFile, err := os.Open(chunkPath)
+   if err != nil {
+    ctx.String(500, "open chunk failed:"+err.Error())
+    return
+   }
+
+   // 计算分片的SHA256哈希值
+   hash := sha256.New()
+   _, err = io.Copy(hash, chunkFile)
+   chunkFile.Close() // 立即关闭文件，避免后续删除目录时出现文件占用问题（Windows）
+
+   if err != nil {
+    ctx.String(500, "calculate chunk hash failed:"+err.Error())
+    return
+   }
+
+   // 对比计算的哈希值与客户端提供的哈希值
+   calculatedHash := hex.EncodeToString(hash.Sum(nil))
+   if calculatedHash != chunkHash {
+    // 哈希不匹配，说明分片传输过程中损坏，删除该分片
+    os.Remove(chunkPath)
+    ctx.JSON(400, gin.H{
+     "status":         "chunk hash mismatch",
+     "calculatedHash": calculatedHash,
+     "expectedHash":   chunkHash,
+    })
+    return
+   }
+  }
+
+  // ========== 第六步：检查所有分片是否已上传完成 ==========
+
+  // 遍历检查所有分片文件是否都存在
+  allChunksReady := true
+  for i := 0; i < totalChunks; i++ {
+   if _, err := os.Stat(filepath.Join(fileDir, fmt.Sprintf("%d.part", i))); err != nil {
+    // 有分片文件不存在
+    allChunksReady = false
+    break
+   }
+  }
+
+  // ========== 第七步：如果分片未齐全，返回等待状态 ==========
+
+  if !allChunksReady {
+   // 返回成功响应，告知客户端继续上传其他分片
+   ctx.JSON(200, gin.H{
+    "status":       "chunk uploaded",
+    "chunkIndex":   chunkIndex,
+    "totalChunks":  totalChunks,
+    "allCompleted": false,
+   })
+   return
+  }
+
+  // ========== 第八步：所有分片齐全，开始合并文件 ==========
+
+  // 创建最终的完整文件
+  finalPath := filepath.Join(basePath, filename)
+  finalFile, err := os.Create(finalPath)
+  if err != nil {
+   ctx.String(500, "create final file failed:"+err.Error())
+   return
+  }
+  defer finalFile.Close() // 使用 defer 确保函数退出时关闭文件
+
+  // 创建哈希计算器，用于计算合并后完整文件的哈希值
+  hash := sha256.New()
+
+  // 按顺序读取并合并所有分片
+  for i := 0; i < totalChunks; i++ {
+   // 打开第 i 个分片文件
+   chunkFilePath := filepath.Join(fileDir, fmt.Sprintf("%d.part", i))
+   partFile, err := os.Open(chunkFilePath)
+   if err != nil {
+    ctx.String(500, fmt.Sprintf("open chunk %d failed: %s", i, err.Error()))
+    return
+   }
+
+   // 将分片内容写入最终文件
+   _, err = io.Copy(finalFile, partFile)
+   if err != nil {
+    partFile.Close()
+    ctx.String(500, fmt.Sprintf("merge chunk %d failed: %s", i, err.Error()))
+    return
+   }
+
+   // 重置文件指针到开头，准备计算哈希
+   partFile.Seek(0, 0)
+   // 读取分片内容并更新哈希计算器
+   _, err = io.Copy(hash, partFile)
+   partFile.Close() // 立即关闭分片文件
+
+   if err != nil {
+    ctx.String(500, fmt.Sprintf("calculate hash for chunk %d failed: %s", i, err.Error()))
+    return
+   }
+  }
+
+  // ========== 第九步：校验合并后的完整文件哈希 ==========
+
+  // 计算合并后文件的SHA256哈希值
+  finalHash := hex.EncodeToString(hash.Sum(nil))
+
+  // 对比计算的哈希值与客户端提供的文件哈希值
+  if finalHash != fileHash {
+   // 哈希不匹配，说明文件损坏或传输错误
+   finalFile.Close() // 先关闭文件句柄
+   os.Remove(finalPath) // 删除损坏的文件
+   ctx.JSON(400, gin.H{
+    "status":     "file hash mismatch",
+    "serverHash": finalHash,
+    "clientHash": fileHash,
+   })
+   return
+  }
+
+  // ========== 第十步：清理临时分片文件 ==========
+
+  finalFile.Close() // 显式关闭文件，确保文件句柄释放（对 Windows 很重要）
+  err = os.RemoveAll(fileDir) // 删除整个临时分片目录
+  if err != nil {
+   // 删除失败只记录日志，不影响上传成功的结果
+   fmt.Printf("Warning: failed to cleanup temp dir %s: %v\n", fileDir, err)
+  }
+
+  // ========== 第十一步：返回成功响应 ==========
+
+  ctx.JSON(200, gin.H{
+   "status":       "success",
+   "path":         finalPath,
+   "fileHash":     finalHash,
+   "allCompleted": true,
+  })
+
+ })
+
+ // 启动服务器，默认监听 0.0.0.0:8080
+ router.Run()
+}
 
 ```
