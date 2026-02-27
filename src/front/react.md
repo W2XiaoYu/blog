@@ -489,3 +489,27 @@ function Example() {
 
 export default Example;
 ```
+
+### web唤起Windows软件
+
+在某些官网中，可以通过特定的协议（如 myapp://）来唤起 Windows 上的本地软件。这通常需要在 Windows 注册表中注册该协议，并且在 React 应用中使用 window.location.href 来触发唤起。
+
+比如虚幻官网就提供了一个链接，可以唤起 Epic Games Launcher、还有网页上点击后一键加qq好友的链接等等都是利用这个原理实现的。
+
+pc软件安装我用的是 Inno Setup
+```pascal
+; ================= 3A Launcher URL Protocol =================
+Root: HKCR; Subkey: "threealuancher"; ValueType: string; ValueData: "URL:3A Launcher Protocol"; Flags: uninsdeletekey
+Root: HKCR; Subkey: "threealuancher"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
+Root: HKCR; Subkey: "threealuancher\DefaultIcon"; ValueType: string; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKCR; Subkey: "threealuancher\shell"; Flags: uninsdeletekey
+Root: HKCR; Subkey: "threealuancher\shell\open"; Flags: uninsdeletekey
+Root: HKCR; Subkey: "threealuancher\shell\open\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
+```
+然后在web页中使用如下代码唤起软件
+```tsx
+const openLocal3ALauncher = () => {
+    window.location.href = 'threealuancher://open';
+};
+```
+注意事项：协议的名字不能用数字开头，否则浏览器会认为这是一个无效的协议，导致无法唤起软件。
