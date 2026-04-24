@@ -25,6 +25,9 @@ hero:
     - theme: alt
       text: Go
       link: /back-end/go
+    - theme: alt
+      text: Electron
+      link: /electron/color-picker
 
 
 features:

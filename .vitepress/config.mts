@@ -66,6 +66,7 @@ export default defineConfig({
         ]
       },
       { text: 'Flutter', link: '/flutter' },
+      { text: 'Electron', link: '/electron/color-picker' },
       { text: '挪车二维码', link: '/qrcode' },
     ],
     sidebar: [
@@ -85,6 +86,12 @@ export default defineConfig({
             text: "vim编辑器",
             link: '/linux/vim'
           }
+        ]
+      },
+      {
+        text: 'Electron',
+        items: [
+          { text: '全局屏幕取色器', link: '/electron/color-picker' }
         ]
       }
     ],
