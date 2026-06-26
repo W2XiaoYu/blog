@@ -65,7 +65,16 @@ export default defineConfig({
           },
         ]
       },
-      { text: 'Flutter', link: '/flutter' },
+      {
+        text: 'Flutter', items: [
+          { text: '打包构建', link: '/flutter/packaging' },
+          { text: '安卓原生', link: '/flutter/android-native' },
+          { text: 'Windows 桌面', link: '/flutter/windows-desktop' },
+          { text: '桌面内存优化', link: '/flutter/memory-optimization' },
+          { text: '自定义拖拽与拖拽加密', link: '/flutter/custom-drag-encryption' },
+          { text: '代码片段', link: '/flutter/code-snippets' },
+        ]
+      },
       { text: 'Electron', link: '/electron/color-picker' },
       { text: '挪车二维码', link: '/qrcode' },
     ],
@@ -75,6 +84,17 @@ export default defineConfig({
         items: [
           { text: 'Vue', link: '/front/vue' },
           { text: 'React', link: '/front/react' }
+        ]
+      },
+      {
+        text: 'Flutter',
+        items: [
+          { text: '打包构建', link: '/flutter/packaging' },
+          { text: '安卓原生', link: '/flutter/android-native' },
+          { text: 'Windows 桌面', link: '/flutter/windows-desktop' },
+          { text: '桌面内存优化', link: '/flutter/memory-optimization' },
+          { text: '自定义拖拽与拖拽加密', link: '/flutter/custom-drag-encryption' },
+          { text: '代码片段', link: '/flutter/code-snippets' },
         ]
       },
       {
