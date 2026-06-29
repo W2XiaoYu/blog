@@ -5,37 +5,31 @@ layout: home
 hero:
   image:
     src: /logo.svg
-    alt: 图片挂啦
-  name: "Wongcong的文档"
+    alt: CongWong的笔记
+  name: "CongWong的笔记"
   text: "随心记录"
   tagline: 人生到处知何似，应似飞鸿踏雪泥。
   actions:
     - theme: brand
-      text: Jetpack Compose
-      link: /Android/compose
-    - theme: alt
       text: 前端
-      link: /front/vue
+      link: /front
     - theme: alt
-      text: flutter笔记
+      text: 移动端
       link: /flutter
     - theme: alt
-      text: Linux
-      link: /linux/nginx
-    - theme: alt
-      text: Go
-      link: /back-end/go
-    - theme: alt
       text: Electron
-      link: /electron/color-picker
-
+      link: /electron
+    - theme: alt
+      text: 后端 & 运维
+      link: /back-end
 
 features:
-  - title: Web
-    details: 技术栈：Vue、React、UnoCss、微信小程序(原生)、Uni-app等。
+  - title: Web 前端
+    details: 技术栈：Vue、React、UnoCss、微信小程序(原生)、Uni-app 等。
   - title: 移动端
-    details: 技术栈：Flutter开发iOS和Android App，Compose写原生App。
-  - title: 后端
-    details: 会一点go和node，公司项目中写过node脚本，用gin写过后台管理系统。
+    details: 技术栈：Flutter 开发 iOS / Android / Windows App，Compose 写原生 Android。
+  - title: 桌面端
+    details: 技术栈：Electron 桌面应用开发（取色器、自动代码签名等）。
+  - title: 后端 & 运维
+    details: Go 脚本、Node、Nginx、Linux、vim 等运维相关笔记。
 ---
-

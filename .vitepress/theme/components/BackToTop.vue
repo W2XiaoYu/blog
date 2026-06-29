@@ -14,6 +14,7 @@
 import { ref, onMounted, onUnmounted, watchEffect } from 'vue';
 const isVisible = ref(false);
 const scrollThreshold = 300; // 滚动超过多少距离显示按钮
+const isClient = typeof document !== 'undefined'; // SSR 守卫：服务端渲染时不存在 document
 
 
 const scrollToTop = () => {
@@ -26,7 +27,7 @@ const scrollToTop = () => {
 const handleScroll = () => {
     isVisible.value = window.scrollY > scrollThreshold;
 
- 
+
 };
 
 onMounted(() => {
@@ -37,7 +38,9 @@ onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll);
 });
 
+// 仅在客户端执行，避免 SSR 阶段访问 document 报错
 watchEffect(() => {
+    if (!isClient) return;
     if (isVisible.value) {
         document.querySelector('.back-to-top')?.classList.add('active');
     } else {
