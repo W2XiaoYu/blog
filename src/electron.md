@@ -9,3 +9,4 @@ title: Electron
 
 - [全局屏幕取色器](./electron/color-picker) — Electron 实现类微信截图的全局取色器（放大镜预览 + 剪贴板复制）
 - [打包自动代码签名](./electron/code-signing) — Electron 打包时自动完成 Windows 代码签名
+- [透明窗口 slider 拖拽光标](./electron/slider-drag-cursor) — transparent 分层窗口中拖拽 slider 强制全局 ew-resize 光标
