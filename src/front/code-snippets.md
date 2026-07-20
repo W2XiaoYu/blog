@@ -219,3 +219,8 @@ Promise.myAll=function (promises){
 }
 
 ```
+---
+
+## View Transitions API 圆形扩散主题切换
+
+仿哔哩哔哩客户端的主题切换效果——切暗色时圆形扩散，切亮色时圆形收回。详细实现请看 [完整文章](/front/view-transition-theme)。

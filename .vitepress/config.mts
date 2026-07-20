@@ -58,7 +58,6 @@ export default defineConfig({
           { text: "Vue", link: '/front/vue' },
           { text: "React", link: '/front/react' },
           { text: "代码片段", link: '/front/code-snippets' },
-          { text: "圆形扩散主题切换", link: '/front/view-transition-theme' },
         ]
       },
       {
@@ -91,7 +90,6 @@ export default defineConfig({
           { text: 'Vue', link: '/front/vue' },
           { text: 'React', link: '/front/react' },
           { text: '代码片段', link: '/front/code-snippets' },
-          { text: '圆形扩散主题切换', link: '/front/view-transition-theme' }
         ]
       },
       {
