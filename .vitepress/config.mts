@@ -57,17 +57,18 @@ export default defineConfig({
         text: '前端', items: [
           { text: "Vue", link: '/front/vue' },
           { text: "React", link: '/front/react' },
+          { text: "View Transitions 主题切换", link: '/front/view-transition-theme' },
           { text: "代码片段", link: '/front/code-snippets' },
         ]
       },
       {
         text: '移动端', items: [
           { text: 'Flutter', link: '/flutter' },
-          { text: 'Jetpack Compose', link: '/Android/compose' },
+          { text: 'Jetpack Compose', link: '/flutter/compose' },
         ]
       },
       {
-        text: 'Electron', items: [
+        text: '桌面端', items: [
           { text: '全局屏幕取色器', link: '/electron/color-picker' },
           { text: '打包自动代码签名', link: '/electron/code-signing' },
           { text: '透明窗口 slider 拖拽光标', link: '/electron/slider-drag-cursor' },
@@ -77,12 +78,11 @@ export default defineConfig({
         text: '后端 & 运维', items: [
           { text: 'Go 语言', link: '/back-end/go' },
           { text: 'Docker 部署', link: '/back-end/docker-deploy' },
-          { text: 'Nginx', link: '/linux/nginx' },
-          { text: 'Linux 命令', link: '/linux/command' },
-          { text: 'vim 编辑器', link: '/linux/vim' },
+          { text: 'Nginx', link: '/back-end/nginx' },
+          { text: 'Linux 命令', link: '/back-end/command' },
+          { text: 'vim 编辑器', link: '/back-end/vim' },
         ]
       },
-      { text: '挪车二维码', link: '/qrcode' },
     ],
     sidebar: [
       {
@@ -90,24 +90,31 @@ export default defineConfig({
         items: [
           { text: 'Vue', link: '/front/vue' },
           { text: 'React', link: '/front/react' },
+          { text: 'View Transitions 主题切换', link: '/front/view-transition-theme' },
           { text: '代码片段', link: '/front/code-snippets' },
         ]
       },
       {
         text: '移动端',
         items: [
-          { text: 'Flutter', link: '/flutter' },
-          { text: '  ├ 打包构建', link: '/flutter/packaging' },
-          { text: '  ├ 安卓原生', link: '/flutter/android-native' },
-          { text: '  ├ Windows 桌面', link: '/flutter/windows-desktop' },
-          { text: '  ├ 桌面内存优化', link: '/flutter/memory-optimization' },
-          { text: '  ├ 自定义拖拽与拖拽加密', link: '/flutter/custom-drag-encryption' },
-          { text: '  └ 代码片段', link: '/flutter/code-snippets' },
-          { text: 'Jetpack Compose', link: '/Android/compose' }
+          { text: 'Flutter 介绍', link: '/flutter' },
+          {
+            text: 'Flutter',
+            collapsed: false,
+            items: [
+              { text: '打包构建', link: '/flutter/packaging' },
+              { text: '安卓原生', link: '/flutter/android-native' },
+              { text: 'Windows 桌面', link: '/flutter/windows-desktop' },
+              { text: '桌面内存优化', link: '/flutter/memory-optimization' },
+              { text: '自定义拖拽与拖拽加密', link: '/flutter/custom-drag-encryption' },
+              { text: '代码片段', link: '/flutter/code-snippets' },
+            ]
+          },
+          { text: 'Jetpack Compose', link: '/flutter/compose' },
         ]
       },
       {
-        text: 'Electron',
+        text: '桌面端',
         items: [
           { text: '全局屏幕取色器', link: '/electron/color-picker' },
           { text: '打包自动代码签名', link: '/electron/code-signing' },
@@ -118,9 +125,10 @@ export default defineConfig({
         text: '后端 & 运维',
         items: [
           { text: 'Go 语言', link: '/back-end/go' },
-          { text: 'Nginx', link: '/linux/nginx' },
-          { text: 'Linux 命令', link: '/linux/command' },
-          { text: 'vim 编辑器', link: '/linux/vim' }
+          { text: 'Docker 部署', link: '/back-end/docker-deploy' },
+          { text: 'Nginx', link: '/back-end/nginx' },
+          { text: 'Linux 命令', link: '/back-end/command' },
+          { text: 'vim 编辑器', link: '/back-end/vim' }
         ]
       }
     ],

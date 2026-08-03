@@ -17,7 +17,7 @@ hero:
       text: 移动端
       link: /flutter
     - theme: alt
-      text: Electron
+      text: 桌面端
       link: /electron
     - theme: alt
       text: 后端 & 运维

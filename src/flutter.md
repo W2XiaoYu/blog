@@ -12,4 +12,5 @@ title: Flutter
 - [Windows 桌面](./flutter/windows-desktop) — 系统托盘、多窗口、输入法、ValueNotifier 等
 - [桌面内存优化](./flutter/memory-optimization) — Flutter Windows 桌面应用内存优化实战
 - [自定义拖拽与拖拽加密](./flutter/custom-drag-encryption) — FFI 绕开 OLE ghost image + AES-256-GCM 拖拽加密
+- [Jetpack Compose](./flutter/compose) — Compose 组件学习与实践
 - [代码片段](./flutter/code-snippets) — 日志、网络检测、视频流、解压乱码、文件切片上传等
