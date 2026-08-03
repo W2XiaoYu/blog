@@ -465,24 +465,28 @@ export default Example;
 2. 依赖项数组：包含计算函数依赖的所有变量。
 
 ```tsx
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 
-function Button({ onClick, children }) {
+// 子组件用 memo 包裹：只有 props 变化时才重新渲染
+const Button = memo(function Button({ onClick, children }) {
   console.log('Button 组件渲染');
   return <button onClick={onClick}>{children}</button>;
-}
+});
 
 function Example() {
   const [count, setCount] = useState(0);
+  const [text, setText] = useState('');
 
-  const handleClick = useCallback(() => {
-    setCount(count + 1);
-  }, [count]);
+  // 用 useCallback 缓存函数引用，避免每次渲染都生成新函数导致 memo 失效
+  const handleIncrement = useCallback(() => {
+    setCount((c) => c + 1);
+  }, []); // 依赖数组为空，函数引用始终不变（用了函数式更新，不依赖外部 count）
 
   return (
     <div>
       <p>Count: {count}</p>
-      <Button onClick={handleClick}>Increment</Button>
+      <Button onClick={handleIncrement}>Increment</Button>
+      <input value={text} onChange={(e) => setText(e.target.value)} />
     </div>
   );
 }
@@ -490,7 +494,212 @@ function Example() {
 export default Example;
 ```
 
-### web唤起Windows软件
+::: tip 与 useMemo 的关系
+`useCallback(fn, deps)` 等价于 `useMemo(() => fn, deps)`。前者缓存的是函数本身，后者缓存的是函数执行后的结果。配合子组件的 `React.memo` 使用才有意义——如果子组件没有被 `memo` 包裹，父组件每次渲染生成新函数引用并不会带来额外开销，此时用 `useCallback` 反而是负担。
+:::
+
+### useLayoutEffect
+
+**作用**：与 `useEffect` 用法完全一致，区别在于**执行时机**。`useLayoutEffect` 会在 DOM 更新后、浏览器绘制前**同步**执行；而 `useEffect` 是在浏览器绘制后**异步**执行。
+
+**何时用**：当你需要在读取 / 修改 DOM 布局后再让浏览器绘制时使用，例如测量元素尺寸、根据 DOM 位置动态定位 tooltip / 浮层、防止页面闪烁。否则默认用 `useEffect` 即可，避免阻塞绘制影响性能。
+
+```tsx
+import { useRef, useLayoutEffect, useState } from 'react';
+
+function Tooltip({ content }) {
+  const ref = useRef(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+
+  useLayoutEffect(() => {
+    // 在浏览器绘制前读取 DOM 位置，避免出现「先错位再跳正」的闪烁
+    const rect = ref.current.getBoundingClientRect();
+    setPosition({ top: rect.bottom + 8, left: rect.left });
+  }, [content]);
+
+  return (
+    <>
+      <span ref={ref}>{content}</span>
+      <div style={{ position: 'fixed', top: position.top, left: position.left }}>{content}</div>
+    </>
+  );
+}
+```
+
+### useImperativeHandle
+
+**作用**：配合 `forwardRef` 使用，让父组件通过 ref 调用子组件**主动暴露**的方法，而不是直接拿到整个 DOM 实例。这样既能实现父子通信，又能封装内部实现细节。
+
+```tsx
+import { useRef, useImperativeHandle, forwardRef } from 'react';
+
+// 1. 用 forwardRef 包裹子组件，接收父组件传入的 ref
+const FancyInput = forwardRef(function FancyInput(props, ref) {
+  const inputRef = useRef(null);
+
+  // 2. useImperativeHandle 自定义暴露给父组件的实例值
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      inputRef.current?.focus();
+    },
+    clear: () => {
+      if (inputRef.current) inputRef.current.value = '';
+    },
+  }));
+
+  return <input ref={inputRef} />;
+});
+
+function Parent() {
+  // 3. 父组件通过 ref 拿到的不是 DOM，而是 { focus, clear }
+  const inputRef = useRef(null);
+
+  return (
+    <>
+      <FancyInput ref={inputRef} />
+      <button onClick={() => inputRef.current?.focus()}>聚焦</button>
+      <button onClick={() => inputRef.current?.clear()}>清空</button>
+    </>
+  );
+}
+```
+
+### useId
+
+**作用**：生成一个在**服务端和客户端渲染之间保持一致**的唯一 id。主要解决 SSR（服务端渲染）场景下 id 不一致导致的 hydration 不匹配问题。也可用于关联 `<label htmlFor>` 与表单控件。
+
+::: warning 注意
+`useId` 生成的 id **不应**用作列表渲染的 `key`，它只是为了 SSR 一致性而设计；列表 key 应来自业务数据的唯一标识。
+:::
+
+```tsx
+import { useId } from 'react';
+
+function FormField({ label }) {
+  const id = useId(); // 同一组件多实例会得到不同 id，且 SSR/CSR 一致
+  return (
+    <div>
+      <label htmlFor={id}>{label}</label>
+      <input id={id} />
+    </div>
+  );
+}
+```
+
+### useDeferredValue
+
+**作用**：React 18 引入的并发特性之一。它返回一个**延迟更新**的值——当有紧急更新（如输入框输入）时，可以让耗时的渲染（如大列表过滤）先渲染旧值，等空闲再渲染新值，从而保证输入不卡顿。类似「防抖」，但底层是基于渲染优先级的，体验更顺滑。
+
+```tsx
+import { useState, useDeferredValue, useMemo } from 'react';
+
+function Search({ items }) {
+  const [query, setQuery] = useState('');
+  // query 立即更新（输入框响应快），deferredQuery 延迟更新
+  const deferredQuery = useDeferredValue(query);
+
+  // 只有 deferredQuery 变化才重新过滤，过滤期间用户仍可继续输入
+  const filtered = useMemo(() => {
+    return items.filter((item) => item.includes(deferredQuery));
+  }, [items, deferredQuery]);
+
+  return (
+    <input value={query} onChange={(e) => setQuery(e.target.value)} />
+    <ul>{filtered.map((item) => <li key={item}>{item}</li>)}</ul>
+  );
+}
+```
+
+### useTransition
+
+**作用**：React 18 并发特性。返回 `[isPending, startTransition]`，把一次状态更新标记为**低优先级 transition**，让 React 可以被更紧急的更新（如输入）打断。`isPending` 可用于展示加载态。
+
+**与 useDeferredValue 的区别**：`useDeferredValue` 作用于「读取的值」（适合库 / 受控场景），`useTransition` 作用于「触发的 setState」（适合你掌控事件处理逻辑时）。
+
+```tsx
+import { useState, useTransition } from 'react';
+
+function Tabs({ tabs }) {
+  const [active, setActive] = useState(0);
+  const [isPending, startTransition] = useTransition();
+
+  function handleClick(index) {
+    // tab 高亮立即更新（紧急），切 tab 内容用 transition（低优先级）
+    setActive(index);
+    startTransition(() => {
+      setActive(index); // 这里再标记一次，让重内容渲染可被打断
+    });
+  }
+
+  return (
+    <>
+      {tabs.map((tab, i) => (
+        <button key={i} onClick={() => handleClick(i)}>{tab.title}</button>
+      ))}
+      {isPending ? <p>切换中…</p> : <div>{tabs[active].content}</div>}
+    </>
+  );
+}
+```
+
+### useSyncExternalStore
+
+**作用**：React 18 提供的用于**安全订阅外部数据源**的 Hook（如浏览器 API、第三方状态管理库）。它能正确处理并发模式下的 tearing（撕裂）问题。状态管理库（Redux、Zustand、Recoil 等）底层都基于它实现。日常业务直接订阅 `window.matchMedia`、`IntersectionObserver`、`localStorage` 等时也很有用。
+
+```tsx
+import { useSyncExternalStore } from 'react';
+
+// 订阅系统主题色变化
+function usePreferredTheme() {
+  return useSyncExternalStore(
+    // 1. subscribe：注册监听，返回取消监听函数
+    (callback) => {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)');
+      mq.addEventListener('change', callback);
+      return () => mq.removeEventListener('change', callback);
+    },
+    // 2. getSnapshot：返回当前快照（必须返回缓存值，引用需稳定）
+    () => (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+    // 3. getServerSnapshot：SSR 时返回的初始值
+    () => 'light'
+  );
+}
+```
+
+### 自定义 Hook
+
+当多个组件有相同的状态逻辑时，可以把逻辑抽成一个以 `use` 开头的函数——这就是自定义 Hook。它本质上是把多个内置 Hook 组合起来复用，而不是 React 的特殊机制。
+
+**两条核心规则**：
+
+1. 只能在**函数组件顶层或其他 Hook 内部**调用 Hook，不能放在条件、循环、嵌套函数里（保证 Hook 调用顺序稳定）。
+2. 自定义 Hook 命名必须以 `use` 开头（如 `useDebounce`、`useLocalStorage`），否则 React 的 lint 插件无法识别它是个 Hook。
+
+```tsx
+import { useState, useEffect } from 'react';
+
+// 一个防抖 Hook：value 变化后等待 delay 才返回最新值
+function useDebounce(value, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer); // 每次重新设置定时器前清掉旧的
+  }, [value, delay]);
+
+  return debounced;
+}
+
+// 使用
+function SearchInput() {
+  const [keyword, setKeyword] = useState('');
+  const debouncedKeyword = useDebounce(keyword, 500); // 输入停顿 500ms 才触发请求
+  // useEffect(() => fetchData(debouncedKeyword), [debouncedKeyword]);
+  return <input value={keyword} onChange={(e) => setKeyword(e.target.value)} />;
+}
+```
+
+## Web 唤起 Windows 软件
 
 在某些官网中，可以通过特定的协议（如 myapp://）来唤起 Windows 上的本地软件。这通常需要在 Windows 注册表中注册该协议，并且在 React 应用中使用 window.location.href 来触发唤起。
 
