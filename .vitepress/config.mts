@@ -76,6 +76,7 @@ export default defineConfig({
       {
         text: '后端 & 运维', items: [
           { text: 'Go 语言', link: '/back-end/go' },
+          { text: 'Docker 部署', link: '/back-end/docker-deploy' },
           { text: 'Nginx', link: '/linux/nginx' },
           { text: 'Linux 命令', link: '/linux/command' },
           { text: 'vim 编辑器', link: '/linux/vim' },
