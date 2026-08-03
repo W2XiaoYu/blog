@@ -1060,3 +1060,240 @@ final uploadProvider = NotifierProvider<UploadNotifier, UploadState>(() {
 });
 
 ```
+
+## Flutter 桌面端自定义拖拽文件
+
+>
+> 完整原理与踩坑记录见：[Flutter Windows 桌面：自定义拖拽 + 拖拽加密实战](./custom-drag-encryption)
+> 已封装为插件：[win_drag_source](https://pub.dev/packages/win_drag_source)
+
+Flutter 桌面端（Windows）用 `super_drag_and_drop` 拖文件出去时，OLE 会自动生成一个半透明的 ghost image（幽灵图像），和我们自己的拖拽预览叠加在一起很难看。下面这套方案用 FFI 直接驱动 Win32 OLE 的 `DoDragDrop`，绕开 ghost image，并支持把加密后的 payload（而非真实文件路径）投递给目标程序。
+
+我把这套实现封装成了 **[win_drag_source](https://pub.dev/packages/win_drag_source)** 插件——纯 Dart FFI、无 native 代码，Windows 专用；在 macOS / Linux / Web 上 `DragSource` 会自动降级为普通 `Listener`，不触发拖拽。装上包就能用，不用再抄下面那一大坨 FFI 代码。
+
+### 安装
+
+```yaml
+dependencies:
+  win_drag_source: ^0.0.1
+```
+
+```bash
+flutter pub get
+```
+
+### 用法
+
+核心就一个 `DragSource` Widget，配合 `FilePayload`（文件）/ `TextPayload`（任意字符串）两种 payload。
+
+**1. 拖拽真实文件（CF_HDROP）**——拖到资源管理器、文件夹就是复制文件：
+
+```dart
+import 'package:win_drag_source/win_drag_source.dart';
+
+DragSource(
+  payload: FilePayload('C:\\path\\to\\file.max'),
+  onDropComplete: (accepted) {
+    debugPrint('drop ${accepted ? 'accepted' : 'rejected'}');
+  },
+  child: YourCard(),
+)
+```
+
+**2. 异步解析 payload**（查数据库、解密等耗时操作）：`payloadProvider` 优先级高于 `payload`。
+
+```dart
+DragSource(
+  payloadProvider: () async {
+    final path = await lookupFilePath(itemId);
+    if (path == null) return null;
+    return FilePayload(path);
+  },
+  onDropComplete: (ok) => ...,
+  child: YourCard(),
+)
+```
+
+**3. 拖拽加密 payload（CF_UNICODETEXT）**——把加密后的字符串当 payload，普通文件接收方不认，只有持密钥的目标程序能接收解密（见下文「拖拽加密」）。
+
+```dart
+DragSource(
+  payload: TextPayload(encrypt(yourJson)),
+  onDropComplete: (ok) => ...,
+  child: YourCard(),
+)
+```
+
+### 自定义 ghost image
+
+默认会截取整个 `child` 作为拖拽预览。如果只想截某个子树（比如只截封面图，排除右下角的角标），给那棵子树套一个带 `GlobalKey` 的 `RepaintBoundary`，再把 key 传给 `imageKey`：
+
+```dart
+final _coverKey = GlobalKey();
+
+@override
+Widget build(BuildContext context) {
+  return DragSource(
+    payload: FilePayload(path),
+    imageKey: _coverKey, // ← 只光栅化这棵子树，而不是整张卡片
+    onDropComplete: (ok) => ...,
+    child: Stack(
+      children: [
+        RepaintBoundary(
+          key: _coverKey,
+          child: Image.file(File(path)),
+        ),
+        Positioned(right: 8, bottom: 8, child: Badge()), // 不进入 ghost image
+      ],
+    ),
+  );
+}
+```
+
+### DragSource API
+
+| 参数 | 类型 | 说明 |
+|---|---|---|
+| `child` | `Widget` | 被包裹的 widget，默认也是 ghost image 的截图源 |
+| `payload` | `DragPayload?` | 同步 payload |
+| `payloadProvider` | `Future<DragPayload?> Function()?` | 异步解析 payload，**优先级高于 `payload`** |
+| `imageKey` | `GlobalKey?` | 指定光栅化哪棵子树作为 ghost image |
+| `enabled` | `bool` | 总开关，默认 `true` |
+| `onTap` | `VoidCallback?` | 单击回调 |
+| `onDoubleTap` | `VoidCallback?` | 双击回调（注册后单击会延迟 500ms 派发，避免双击 = 两次单击） |
+| `onDropComplete` | `ValueChanged<bool>?` | `DoDragDrop` 返回后回调，`true` = 目标接收了拖拽 |
+
+payload 两种类型：
+
+- `FilePayload(path)` → `CF_HDROP`，投递真实文件路径，资源管理器等通用。
+- `TextPayload(text)` → `CF_UNICODETEXT`，投递任意字符串，需目标端按约定解析。
+
+::: tip CF_HDROP vs CF_UNICODETEXT
+- **CF_HDROP（文件）**：explorer、资源管理器等普通文件接收方都认，拖到文件夹就是复制文件。payload 是真实文件路径。
+- **CF_UNICODETEXT（文本）**：把任意字符串当 payload。普通文件接收方**不认**，只有约定好的目标程序会接收并解密。适合「不想暴露真实路径」的场景。
+- 两者可以在 `payloadProvider` 里按文件类型动态切换（白名单内走加密文本，否则走真实文件）。
+:::
+
+### 拖拽加密：AES-256-GCM + scrypt（应用层）
+
+加密是**应用层**逻辑，不在插件里——你自己根据业务决定 payload 怎么编码。下面这版用 scrypt 派生密钥 + AES-256-GCM 加密，明文是 JSON（含文件路径），格式为 `iv_hex:authTag_hex:cipher_hex`，由持密钥的目标端（如 C++ 渲染器）按约定解密验签。
+
+```dart
+import 'dart:convert';
+import 'dart:math';
+import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
+import 'package:pointycastle/export.dart';
+
+/// 拖拽 payload 加密（AES-256-GCM + scrypt 派生密钥）。
+/// 安全模型：AES-GCM tag 防篡改；不防路径泄露（path 在密文里）。
+class DragPayloadCodec {
+  DragPayloadCodec._();
+
+  // ⚠️ 密钥已脱敏：实际项目里请用环境变量 / 编译期注入管理，
+  //    不要硬编码进仓库；修改需同步改接收端（如 C++ 解密端）。
+  static const String _kPassphrase = '<YOUR_PASSPHRASE>';
+  static const String _kSalt = '<YOUR_SALT>';
+
+  static const int _kScryptN = 16384;
+  static const int _kScryptR = 8;
+  static const int _kScryptP = 1;
+  static const int _kKeyLength = 32; // AES-256
+  static const int _kIvLength = 12;
+  static const int _kTagLength = 16; // GCM-128 bit tag
+
+  static Uint8List? _cachedKey;
+
+  /// 加密为 `iv_hex:authTag_hex:cipher_hex`。
+  /// 明文是 JSON `{"path": ..., "id": ..., "guid": ...}`，除 path 外均可选。
+  static String encode({
+    required String filePath,
+    int? id,
+    String? guid,
+  }) {
+    final key = _deriveKey();
+    final iv = _randomBytes(_kIvLength);
+
+    final json = jsonEncode({
+      'path': filePath,
+      if (id != null) 'id': id,
+      if (guid != null) 'guid': guid,
+    });
+    final plain = Uint8List.fromList(utf8.encode(json));
+
+    final cipher = GCMBlockCipher(AESEngine())
+      ..init(true,
+          AEADParameters(KeyParameter(key), _kTagLength * 8, iv, Uint8List(0)));
+    final out = Uint8List(plain.length + _kTagLength);
+    var len = cipher.processBytes(plain, 0, plain.length, out, 0);
+    len += cipher.doFinal(out, len);
+
+    // pointycastle GCM 输出 = cipher || tag（末 16 字节是 tag）
+    final cipherPart = out.sublist(0, len - _kTagLength);
+    final tagPart = out.sublist(len - _kTagLength, len);
+    return '${_hexEncode(iv)}:${_hexEncode(tagPart)}:${_hexEncode(cipherPart)}';
+  }
+
+  /// scrypt 派生密钥，结果缓存（N=16384 单次 ~30ms）。
+  static Uint8List _deriveKey() {
+    if (_cachedKey != null) return _cachedKey!;
+    final scrypt = Scrypt()
+      ..init(ScryptParameters(
+        _kScryptN, _kScryptR, _kScryptP, _kKeyLength,
+        Uint8List.fromList(utf8.encode(_kSalt)),
+      ));
+    _cachedKey = scrypt.process(Uint8List.fromList(utf8.encode(_kPassphrase)));
+    return _cachedKey!;
+  }
+
+  static Uint8List _randomBytes(int len) {
+    final r = Random.secure();
+    final out = Uint8List(len);
+    for (var i = 0; i < len; i++) {
+      out[i] = r.nextInt(256);
+    }
+    return out;
+  }
+
+  static const _hexDigits = '0123456789abcdef';
+  static String _hexEncode(Uint8List bytes) {
+    final s = StringBuffer();
+    for (final b in bytes) {
+      s.write(_hexDigits[b >> 4]);
+      s.write(_hexDigits[b & 0x0f]);
+    }
+    return s.toString();
+  }
+}
+```
+
+接入 `DragSource` 时，在 `payloadProvider` 里按文件类型决定走加密文本还是真实文件：
+
+```dart
+DragSource(
+  payloadProvider: () async {
+    final path = await lookupFilePath(itemId);
+    if (path == null) return null;
+    // 白名单扩展名走加密 payload，否则原样拖文件
+    if (DragPayloadCodec.shouldEncrypt(path)) {
+      return TextPayload(DragPayloadCodec.encode(filePath: path, id: itemId));
+    }
+    return FilePayload(path);
+  },
+  onDropComplete: (ok) => ...,
+  child: YourCard(),
+)
+```
+
+::: warning 密钥安全
+上面示例里的 `_kPassphrase` / `_kSalt` 已脱敏为占位符。实际项目里密钥应该：
+1. 不要硬编码进源码仓库；
+2. 通过编译期注入（`--dart-define`）或环境变量读取；
+3. 修改密钥时必须同步改接收端（例如 C++ 解密端）。
+:::
+
+::: details 想看 FFI 原始实现？
+插件内部的 `DoDragDrop` / `IDropSource` / `IDataObject` / 分层窗口等 FFI 实现细节，以及 ghost image 产生原因、跨进程 HGLOBAL 复制等踩坑记录，都整理在专题文章里：[Flutter Windows 桌面：自定义拖拽 + 拖拽加密实战](./custom-drag-encryption)。源码见插件仓库。
+:::
+```
