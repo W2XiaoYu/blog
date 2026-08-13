@@ -58,6 +58,7 @@ export default defineConfig({
           { text: "Vue", link: '/front/vue' },
           { text: "React", link: '/front/react' },
           { text: "View Transitions 主题切换", link: '/front/view-transition-theme' },
+          { text: "TypeScript Utility Types", link: '/front/typescript-utility-types' },
           { text: "代码片段", link: '/front/code-snippets' },
         ]
       },
@@ -91,6 +92,7 @@ export default defineConfig({
           { text: 'Vue', link: '/front/vue' },
           { text: 'React', link: '/front/react' },
           { text: 'View Transitions 主题切换', link: '/front/view-transition-theme' },
+          { text: 'TypeScript Utility Types', link: '/front/typescript-utility-types' },
           { text: '代码片段', link: '/front/code-snippets' },
         ]
       },
