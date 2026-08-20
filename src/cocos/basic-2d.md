@@ -5,304 +5,256 @@ title: Cocos Creator 3.8.x 2D 基础
 
 # Cocos Creator 3.8.x 2D 基础
 
-本文面向 Cocos Creator **3.8.x**，示例使用 TypeScript，主要介绍 2D 游戏开发中最常用的概念和 API。
+这篇笔记只讲 Cocos Creator **3.8.x** 中最常用的 2D 内容。示例全部使用 TypeScript，可以直接复制到项目里练习。
 
-> Cocos Creator 3.x 与 2.x 的 API 差异较大。阅读其它教程时，应先确认版本，避免把 `cc.Class`、`cc.loader`、`cc.systemEvent` 等旧写法带入 3.8.x 项目。
+> 看到 `cc.Class`、`cc.loader`、`cc.systemEvent`、`runAction` 时要注意：这些大多是 2.x 旧教程的写法，不要直接放进 3.8.x 项目。
 
-## 编辑器常用面板
+## 先认识三个东西
 
-- **层级管理器（Hierarchy）**：显示当前场景中的节点树。
-- **场景编辑器（Scene）**：编辑节点的位置、大小、旋转和布局。
-- **资源管理器（Assets）**：管理场景、脚本、图片、音频、预制体等资源。
-- **属性检查器（Inspector）**：编辑节点和组件的属性。
-- **控制台（Console）**：查看日志、警告和报错。
+### Scene：场景
 
-推荐先按资源用途划分目录：
+场景就是一个游戏页面，例如：
+
+- `menu.scene`：开始菜单。
+- `game.scene`：游戏关卡。
+- `result.scene`：结算页面。
+
+### Node：节点
+
+节点是场景里的对象，例如玩家、敌人、按钮和文字。
+
+节点可以设置位置、旋转、缩放和显隐：
+
+```ts
+this.node.setPosition(100, 50, 0)
+this.node.angle = 30
+this.node.setScale(1.2, 1.2, 1)
+this.node.active = false
+```
+
+### Component：组件
+
+组件给节点增加功能：
+
+- `Sprite`：显示图片。
+- `Label`：显示文字。
+- `Button`：处理按钮点击。
+- `UITransform`：设置 2D 节点的宽高和锚点。
+- 自己写的 `.ts` 脚本：实现游戏逻辑。
+
+简单理解：**Node 是一个空盒子，Component 决定盒子能做什么。**
+
+## 编辑器常用区域
+
+| 面板 | 用途 |
+| --- | --- |
+| 层级管理器 | 查看当前场景的节点树 |
+| 场景编辑器 | 摆放节点和调整大小 |
+| 资源管理器 | 管理脚本、图片、场景、音频、预制体 |
+| 属性检查器 | 修改节点和组件属性 |
+| 控制台 | 查看日志和报错 |
+
+推荐目录：
 
 ```text
 assets/
-├─ scenes/          # 场景
-├─ scripts/         # TypeScript 脚本
-│  ├─ components/   # 通用组件
-│  ├─ managers/     # 管理器
-│  └─ data/         # 数据定义
-├─ prefabs/         # 预制体
-├─ textures/        # 图片和图集
-├─ audio/           # 音频
-└─ resources/       # 需要通过 resources 动态加载的资源
+├─ scenes/       # 场景
+├─ scripts/      # TypeScript 脚本
+├─ prefabs/      # 预制体
+├─ textures/     # 图片和图集
+├─ audio/        # 音频
+└─ resources/    # 需要动态加载的资源
 ```
 
-`resources` 中的内容会被打进构建产物，不要把所有资源都放进去。可以在编辑器中直接引用的资源，优先通过属性检查器绑定。
+## 第一个组件脚本
 
-## 场景、节点和组件
-
-### 场景 Scene
-
-场景是游戏内容的容器。启动页、主菜单、关卡通常可以拆成不同场景，一个游戏至少要有一个启动场景。
-
-### 节点 Node
-
-节点负责组织层级和保存变换信息，本身通常不负责显示。一个角色节点可能由以下组件共同组成：
-
-- `UITransform`：2D 节点的尺寸和锚点。
-- `Sprite`：显示图片。
-- 自定义脚本：处理移动、生命值和交互逻辑。
-- `Collider2D`：提供 2D 碰撞范围。
-
-常用节点操作：
-
-```ts
-import { Node, Vec3 } from 'cc'
-
-const player = new Node('Player')
-
-player.setPosition(new Vec3(100, 50, 0))
-player.setScale(new Vec3(1.2, 1.2, 1))
-player.angle = 30
-player.active = true
-
-this.node.addChild(player)
-
-const child = this.node.getChildByName('Player')
-child?.removeFromParent()
-child?.destroy()
-```
-
-`removeFromParent()` 只解除父子关系，`destroy()` 才会销毁对象。销毁操作会延迟到当前帧结束时执行。
-
-### 组件 Component
-
-组件挂载在节点上，负责一项具体能力。自定义脚本通常继承 `Component`，并使用 `@ccclass` 注册为 Cocos 组件。
-
-```ts
-import { _decorator, Component, Label, Node } from 'cc'
-
-const { ccclass, property } = _decorator
-
-@ccclass('PlayerInfo')
-export class PlayerInfo extends Component {
-  @property
-  speed = 200
-
-  @property(Node)
-  target: Node | null = null
-
-  @property(Label)
-  nameLabel: Label | null = null
-
-  start() {
-    if (this.nameLabel) {
-      this.nameLabel.string = 'Player'
-    }
-  }
-}
-```
-
-带 `@property` 的属性可以被序列化并显示在属性检查器中。节点、组件和资源类型要显式写入装饰器，例如 `@property(Node)`。
-
-## 组件生命周期
-
-常用生命周期的执行顺序如下：
-
-```text
-onLoad
-  ↓
-onEnable
-  ↓
-start
-  ↓
-update → lateUpdate（每帧执行）
-  ↓
-onDisable
-  ↓
-onDestroy
-```
+在资源管理器中右键，选择 **Create → TypeScript → NewComponent**，创建 `Hello.ts`：
 
 ```ts
 import { _decorator, Component } from 'cc'
 
-const { ccclass } = _decorator
+const { ccclass, property } = _decorator
 
-@ccclass('LifeCycleExample')
-export class LifeCycleExample extends Component {
-  onLoad() {
-    // 初始化数据，可以访问场景中的其它节点和资源
-  }
-
-  onEnable() {
-    // 注册事件；节点每次重新启用时都会执行
-  }
+@ccclass('Hello')
+export class Hello extends Component {
+  @property
+  message = '你好，Cocos'
 
   start() {
-    // 所有组件的 onLoad 执行后再调用，适合开始游戏逻辑
-  }
-
-  update(deltaTime: number) {
-    // deltaTime 是距离上一帧的秒数，移动时应乘上它
-  }
-
-  lateUpdate(deltaTime: number) {
-    // 在 update 之后执行，常用于相机跟随
-  }
-
-  onDisable() {
-    // 移除在 onEnable 中注册的事件
-  }
-
-  onDestroy() {
-    // 最终清理
+    console.log(this.message)
   }
 }
 ```
 
-不要把初始化逻辑写在组件构造函数里。组件由节点创建，应使用 `onLoad()` 或 `start()`。
+把脚本拖到一个节点上。选中节点后，可以在属性检查器中修改 `message`。
 
-## 获取节点和组件
+- `@ccclass('Hello')`：把类注册成 Cocos 组件。
+- `@property`：让属性可以保存并显示在属性检查器中。
+- `start()`：组件第一次开始运行时调用。
 
-优先在属性检查器中绑定引用，这样重命名节点或调整层级时不容易失效。
+## 生命周期怎么用
 
-```ts
-import { find, Label, Sprite } from 'cc'
+不需要一开始背完，先记下面几个：
 
-const sprite = this.getComponent(Sprite)
-const label = this.node.getComponentInChildren(Label)
-const button = this.node.getChildByName('Button')
-const score = find('Canvas/HUD/Score')
-```
-
-`find()` 会按路径查找节点，适合少量初始化代码。不要在 `update()` 中反复调用 `find()` 或 `getComponent()`，应提前缓存结果。
-
-## 2D 节点与 UITransform
-
-需要参与 2D/UI 渲染的节点通常放在 `Canvas` 节点下面，并使用 `UI_2D` 层。2D 节点常见组件包括：
-
-| 组件 | 用途 |
-| --- | --- |
-| `UITransform` | 设置宽高、锚点，进行坐标转换和点击区域判断 |
-| `Sprite` | 显示 `SpriteFrame` 图片资源 |
-| `Label` | 显示文字 |
-| `Button` | 按钮状态与点击事件 |
-| `Widget` | 相对父节点或屏幕边缘对齐 |
-| `Layout` | 自动排列多个子节点 |
-| `Mask` | 裁剪子节点显示区域 |
-| `Graphics` | 通过代码绘制简单 2D 图形 |
-
-### 尺寸与锚点
-
-节点的位置以锚点为基准。默认锚点通常是 `(0.5, 0.5)`，即节点中心。
+| 方法 | 什么时候执行 | 常见用途 |
+| --- | --- | --- |
+| `onLoad()` | 节点第一次加载 | 获取组件、准备数据 |
+| `onEnable()` | 节点或组件启用 | 注册事件 |
+| `start()` | 所有 `onLoad` 之后 | 开始游戏逻辑 |
+| `update(dt)` | 每一帧 | 移动角色 |
+| `onDisable()` | 节点或组件停用 | 取消事件 |
+| `onDestroy()` | 组件销毁 | 最终清理 |
 
 ```ts
-import { UITransform } from 'cc'
+onLoad() {
+  console.log('加载')
+}
 
-const transform = this.getComponent(UITransform)
+start() {
+  console.log('开始')
+}
 
-if (transform) {
-  transform.setContentSize(320, 180)
-  transform.setAnchorPoint(0.5, 0.5)
+update(deltaTime: number) {
+  // deltaTime 是上一帧到这一帧经过的秒数
 }
 ```
 
-不要使用缩放来代替 UI 尺寸。需要改变布局尺寸时修改 `UITransform`，缩放更适合视觉动画。
+## 案例一：点击按钮增加分数
 
-### 本地坐标与世界坐标
+### 场景准备
 
-- `node.position`：相对于父节点的本地坐标。
-- `node.worldPosition`：世界坐标。
-- `UITransform.convertToWorldSpaceAR()`：本地坐标转世界坐标。
-- `UITransform.convertToNodeSpaceAR()`：世界坐标转节点本地坐标。
+在 `Canvas` 下面创建：
 
-```ts
-import { UITransform, Vec3 } from 'cc'
-
-const transform = this.getComponent(UITransform)
-const worldPosition = transform?.convertToWorldSpaceAR(new Vec3(0, 0, 0))
-
-if (transform && worldPosition) {
-  const localPosition = transform.convertToNodeSpaceAR(worldPosition)
-  console.log(localPosition)
-}
+```text
+Canvas
+├─ ScoreLabel   # Label，显示分数
+└─ AddButton    # Button，点击加分
 ```
 
-## Sprite 与 SpriteFrame
-
-`Sprite` 是渲染组件，`SpriteFrame` 是它显示的图片资源。
+创建 `ScoreManager.ts`，挂到 `Canvas`：
 
 ```ts
-import { _decorator, Component, Sprite, SpriteFrame } from 'cc'
+import { _decorator, Component, Label } from 'cc'
 
 const { ccclass, property } = _decorator
 
-@ccclass('Avatar')
-export class Avatar extends Component {
-  @property(Sprite)
-  sprite: Sprite | null = null
+@ccclass('ScoreManager')
+export class ScoreManager extends Component {
+  @property(Label)
+  scoreLabel: Label | null = null
 
-  @property(SpriteFrame)
-  avatarFrame: SpriteFrame | null = null
+  private score = 0
 
   start() {
-    if (this.sprite) {
-      this.sprite.spriteFrame = this.avatarFrame
+    this.updateScoreText()
+  }
+
+  onAddScore() {
+    this.score += 1
+    this.updateScoreText()
+  }
+
+  private updateScoreText() {
+    if (this.scoreLabel) {
+      this.scoreLabel.string = `分数：${this.score}`
     }
   }
 }
 ```
 
-制作大量小图标或序列帧时，可以使用图集减少纹理切换；透明图片周围也应避免保留过多空白区域。
+### 属性怎么连接
 
-## 触摸和鼠标事件
+1. 把 `ScoreLabel` 节点拖到脚本的 `Score Label` 属性。
+2. 找到 `AddButton` 的 `Button` 组件。
+3. 在 `Click Events` 中添加一个事件。
+4. `Target` 拖入 `Canvas`，组件选择 `ScoreManager`，方法选择 `onAddScore`。
 
-### 节点范围内的触摸
+运行后，每点一次按钮，分数加一。
 
-2D 节点触摸检测依赖 `UITransform`。移动端和编辑器预览都可以使用触摸事件：
+## 案例二：用键盘移动角色
+
+创建一个带 `Sprite` 的 `Player` 节点，把 `PlayerMove.ts` 挂上去：
 
 ```ts
-import { _decorator, Component, EventTouch, Node } from 'cc'
+import {
+  _decorator,
+  Component,
+  EventKeyboard,
+  input,
+  Input,
+  KeyCode,
+  Vec3,
+} from 'cc'
 
-const { ccclass } = _decorator
+const { ccclass, property } = _decorator
 
-@ccclass('TouchExample')
-export class TouchExample extends Component {
+@ccclass('PlayerMove')
+export class PlayerMove extends Component {
+  @property
+  speed = 300
+
+  private left = false
+  private right = false
+  private up = false
+  private down = false
+
   onEnable() {
-    this.node.on(Node.EventType.TOUCH_START, this.onTouchStart, this)
+    input.on(Input.EventType.KEY_DOWN, this.onKeyDown, this)
+    input.on(Input.EventType.KEY_UP, this.onKeyUp, this)
   }
 
   onDisable() {
-    this.node.off(Node.EventType.TOUCH_START, this.onTouchStart, this)
+    input.off(Input.EventType.KEY_DOWN, this.onKeyDown, this)
+    input.off(Input.EventType.KEY_UP, this.onKeyUp, this)
   }
 
-  private onTouchStart(event: EventTouch) {
-    const position = event.getUILocation()
-    console.log(position.x, position.y)
+  update(deltaTime: number) {
+    let x = 0
+    let y = 0
+
+    if (this.left) x -= 1
+    if (this.right) x += 1
+    if (this.up) y += 1
+    if (this.down) y -= 1
+
+    const direction = new Vec3(x, y, 0)
+    if (direction.lengthSqr() === 0) return
+
+    direction.normalize()
+
+    const position = this.node.position
+    this.node.setPosition(
+      position.x + direction.x * this.speed * deltaTime,
+      position.y + direction.y * this.speed * deltaTime,
+      position.z,
+    )
+  }
+
+  private onKeyDown(event: EventKeyboard) {
+    this.setKeyState(event.keyCode, true)
+  }
+
+  private onKeyUp(event: EventKeyboard) {
+    this.setKeyState(event.keyCode, false)
+  }
+
+  private setKeyState(keyCode: KeyCode, pressed: boolean) {
+    if (keyCode === KeyCode.KEY_A) this.left = pressed
+    if (keyCode === KeyCode.KEY_D) this.right = pressed
+    if (keyCode === KeyCode.KEY_W) this.up = pressed
+    if (keyCode === KeyCode.KEY_S) this.down = pressed
   }
 }
 ```
 
-事件在 `onEnable()` 注册，就应在 `onDisable()` 中成对移除，防止节点反复启用后重复监听。
+这里有两个关键点：
 
-### 全局键盘输入
+- 移动距离乘 `deltaTime`，不同帧率下速度才基本一致。
+- 斜向移动前先 `normalize()`，否则斜着走会更快。
 
-```ts
-import { input, Input, EventKeyboard, KeyCode } from 'cc'
+## 案例三：拖动 2D 节点
 
-onEnable() {
-  input.on(Input.EventType.KEY_DOWN, this.onKeyDown, this)
-}
-
-onDisable() {
-  input.off(Input.EventType.KEY_DOWN, this.onKeyDown, this)
-}
-
-private onKeyDown(event: EventKeyboard) {
-  if (event.keyCode === KeyCode.SPACE) {
-    console.log('jump')
-  }
-}
-```
-
-## 一个可用的 2D 拖拽组件
-
-把下面的脚本挂到带有 `UITransform` 的 2D 节点上，即可拖动节点。代码会把触摸位置转换到父节点的本地坐标，避免直接混用屏幕坐标与节点坐标。
+把 `Drag2D.ts` 挂到一个有 `UITransform` 的 2D 节点上：
 
 ```ts
 import {
@@ -331,29 +283,107 @@ export class Drag2D extends Component {
     const parentTransform = this.node.parent?.getComponent(UITransform)
     if (!parentTransform) return
 
-    const uiPosition = event.getUILocation()
-    const localPosition = parentTransform.convertToNodeSpaceAR(
-      new Vec3(uiPosition.x, uiPosition.y, 0),
+    const touch = event.getUILocation()
+    const position = parentTransform.convertToNodeSpaceAR(
+      new Vec3(touch.x, touch.y, 0),
     )
 
-    this.node.setPosition(localPosition)
+    this.node.setPosition(position)
   }
 }
 ```
 
-## 每帧移动
+触摸位置是 UI 坐标，节点位置是父节点本地坐标，所以中间要用 `convertToNodeSpaceAR()` 转换。
 
-移动速度通常用“像素/秒”表示，因此需要乘上 `deltaTime`，避免不同帧率下移动速度不同。
+## 案例四：点击角色切换图片
+
+准备两张图片，把它们的 `SpriteFrame` 拖到脚本属性：
+
+```ts
+import { _decorator, Component, Node, Sprite, SpriteFrame } from 'cc'
+
+const { ccclass, property } = _decorator
+
+@ccclass('ChangeSkin')
+export class ChangeSkin extends Component {
+  @property(SpriteFrame)
+  normalFrame: SpriteFrame | null = null
+
+  @property(SpriteFrame)
+  happyFrame: SpriteFrame | null = null
+
+  private sprite: Sprite | null = null
+  private happy = false
+
+  onLoad() {
+    this.sprite = this.getComponent(Sprite)
+  }
+
+  onEnable() {
+    this.node.on(Node.EventType.TOUCH_END, this.changeSkin, this)
+  }
+
+  onDisable() {
+    this.node.off(Node.EventType.TOUCH_END, this.changeSkin, this)
+  }
+
+  private changeSkin() {
+    this.happy = !this.happy
+
+    if (this.sprite) {
+      this.sprite.spriteFrame = this.happy
+        ? this.happyFrame
+        : this.normalFrame
+    }
+  }
+}
+```
+
+`Sprite` 是显示图片的组件，`SpriteFrame` 是具体的图片资源。
+
+## 案例五：生成子弹预制体
+
+先在场景中做好一个 `Bullet` 节点，再把它拖到资源管理器的 `prefabs` 文件夹中，生成 `Bullet.prefab`。
+
+把下面脚本挂到玩家节点：
+
+```ts
+import { _decorator, Component, instantiate, Node, Prefab } from 'cc'
+
+const { ccclass, property } = _decorator
+
+@ccclass('Shooter')
+export class Shooter extends Component {
+  @property(Prefab)
+  bulletPrefab: Prefab | null = null
+
+  @property(Node)
+  bulletLayer: Node | null = null
+
+  shoot() {
+    if (!this.bulletPrefab || !this.bulletLayer) return
+
+    const bullet = instantiate(this.bulletPrefab)
+    bullet.setParent(this.bulletLayer)
+    bullet.setWorldPosition(this.node.worldPosition)
+  }
+}
+```
+
+再给子弹挂一个简单移动脚本：
 
 ```ts
 import { _decorator, Component } from 'cc'
 
 const { ccclass, property } = _decorator
 
-@ccclass('AutoMove')
-export class AutoMove extends Component {
+@ccclass('BulletMove')
+export class BulletMove extends Component {
   @property
-  speed = 200
+  speed = 600
+
+  @property
+  lifeTime = 2
 
   update(deltaTime: number) {
     const position = this.node.position
@@ -362,102 +392,171 @@ export class AutoMove extends Component {
       position.y,
       position.z,
     )
+
+    this.lifeTime -= deltaTime
+    if (this.lifeTime <= 0) {
+      this.node.destroy()
+    }
   }
 }
 ```
 
-## Tween 缓动动画
+少量子弹可以直接销毁。数量很多时，应改用 `NodePool` 或自定义对象池复用。
 
-简单的移动、缩放、旋转和透明度变化可以使用 `tween`：
+## 案例六：10 秒倒计时
 
-```ts
-import { tween, Vec3 } from 'cc'
-
-tween(this.node)
-  .to(0.3, { position: new Vec3(300, 0, 0) }, { easing: 'quadOut' })
-  .by(0.15, { scale: new Vec3(0.1, 0.1, 0) })
-  .by(0.15, { scale: new Vec3(-0.1, -0.1, 0) })
-  .call(() => console.log('动画完成'))
-  .start()
-```
-
-需要停止该节点上的全部 Tween 时：
+创建一个 `Label`，把它拖到脚本的 `Time Label` 属性：
 
 ```ts
-import { Tween } from 'cc'
-
-Tween.stopAllByTarget(this.node)
-```
-
-## 预制体 Prefab
-
-预制体用于保存一棵可复用的节点结构，例如敌人、子弹、奖励物品和弹窗。
-
-在编辑器中把节点从层级管理器拖到资源管理器，就可以生成 `.prefab` 文件。运行时通过 `instantiate()` 创建实例：
-
-```ts
-import { _decorator, Component, instantiate, Node, Prefab } from 'cc'
+import { _decorator, Component, Label } from 'cc'
 
 const { ccclass, property } = _decorator
 
-@ccclass('EnemySpawner')
-export class EnemySpawner extends Component {
-  @property(Prefab)
-  enemyPrefab: Prefab | null = null
+@ccclass('CountDown')
+export class CountDown extends Component {
+  @property(Label)
+  timeLabel: Label | null = null
 
-  @property(Node)
-  enemyLayer: Node | null = null
+  private remaining = 10
 
-  spawn() {
-    if (!this.enemyPrefab || !this.enemyLayer) return
+  start() {
+    this.showTime()
+    this.schedule(this.tick, 1)
+  }
 
-    const enemy = instantiate(this.enemyPrefab)
-    enemy.setParent(this.enemyLayer)
-    enemy.setPosition(0, 0, 0)
+  private tick() {
+    this.remaining -= 1
+    this.showTime()
+
+    if (this.remaining <= 0) {
+      this.unschedule(this.tick)
+      console.log('时间到')
+    }
+  }
+
+  private showTime() {
+    if (this.timeLabel) {
+      this.timeLabel.string = `${this.remaining}`
+    }
   }
 }
 ```
 
-频繁创建和销毁的对象（如子弹）应配合 `NodePool` 或自己的对象池复用，减少运行时抖动。
+`schedule(callback, interval)` 按秒定时执行，比自己在 `update()` 中累计时间更直白。
 
-## 动态加载资源
+## 案例七：弹窗打开和关闭动画
 
-放在 `assets/resources/` 下的资源可以通过 `resources.load()` 加载。路径相对于 `resources` 目录，并且不能带文件扩展名。
+把脚本挂到弹窗根节点：
 
 ```ts
-import { resources, Sprite, SpriteFrame } from 'cc'
+import { _decorator, Component, tween, Tween, Vec3 } from 'cc'
 
-resources.load(
-  'textures/player/spriteFrame',
-  SpriteFrame,
-  (error, spriteFrame) => {
-    if (error) {
-      console.error(error)
-      return
-    }
+const { ccclass } = _decorator
 
-    const sprite = this.getComponent(Sprite)
-    if (sprite) {
-      sprite.spriteFrame = spriteFrame
-    }
-  },
-)
+@ccclass('Popup')
+export class Popup extends Component {
+  open() {
+    this.node.active = true
+    this.node.setScale(0, 0, 1)
+
+    tween(this.node)
+      .to(0.2, { scale: new Vec3(1, 1, 1) }, { easing: 'backOut' })
+      .start()
+  }
+
+  close() {
+    tween(this.node)
+      .to(0.15, { scale: new Vec3(0, 0, 1) }, { easing: 'backIn' })
+      .call(() => {
+        this.node.active = false
+      })
+      .start()
+  }
+
+  onDestroy() {
+    Tween.stopAllByTarget(this.node)
+  }
+}
 ```
 
-加载图片的 `SpriteFrame` 子资源时，路径需要以 `/spriteFrame` 结尾。大型项目可以使用 Asset Bundle 管理分包资源。
+如果弹窗一开始就是隐藏状态，控制它的脚本最好挂在外层常驻节点上，否则隐藏节点后无法直接通过按钮找到并执行它的 `open()`。
 
-## 2D 物理与碰撞
+## 案例八：切换场景
 
-Cocos Creator 3.8.x 的 2D 物理与 3D 物理是两套系统，不要混用组件。
+先在构建发布配置中加入 `menu` 和 `game` 场景，再调用：
 
-常用 2D 组件：
+```ts
+import { _decorator, Component, director } from 'cc'
 
-- `RigidBody2D`：刚体，控制质量、速度、重力和刚体类型。
-- `BoxCollider2D`：矩形碰撞体。
-- `CircleCollider2D`：圆形碰撞体。
-- `PolygonCollider2D`：多边形碰撞体。
+const { ccclass } = _decorator
 
-Builtin 2D 物理主要提供碰撞检测；需要重力、力和完整刚体模拟时使用 Box2D。Box2D 下监听碰撞前，要勾选 `RigidBody2D` 的 `Enabled Contact Listener`。
+@ccclass('SceneButton')
+export class SceneButton extends Component {
+  openGame() {
+    director.loadScene('game')
+  }
+
+  backMenu() {
+    director.loadScene('menu')
+  }
+}
+```
+
+场景名不需要写 `.scene` 后缀。
+
+## 案例九：动态加载图片
+
+把图片放到：
+
+```text
+assets/resources/textures/avatar.png
+```
+
+代码：
+
+```ts
+import { _decorator, Component, resources, Sprite, SpriteFrame } from 'cc'
+
+const { ccclass } = _decorator
+
+@ccclass('LoadAvatar')
+export class LoadAvatar extends Component {
+  start() {
+    resources.load(
+      'textures/avatar/spriteFrame',
+      SpriteFrame,
+      (error, spriteFrame) => {
+        if (error) {
+          console.error(error)
+          return
+        }
+
+        const sprite = this.getComponent(Sprite)
+        if (sprite) {
+          sprite.spriteFrame = spriteFrame
+        }
+      },
+    )
+  }
+}
+```
+
+注意：
+
+- 路径相对于 `resources` 文件夹。
+- 不写 `.png` 后缀。
+- 加载图片的 `SpriteFrame` 时，路径末尾加 `/spriteFrame`。
+- 能直接拖到属性检查器的资源，不必全部动态加载。
+
+## 案例十：2D 碰撞检测
+
+给玩家添加：
+
+- `RigidBody2D`
+- `BoxCollider2D`
+- 下面的 `PlayerCollision.ts`
+
+如果项目使用 Box2D，还要勾选 `RigidBody2D` 的 **Enabled Contact Listener**。
 
 ```ts
 import {
@@ -470,8 +569,8 @@ import {
 
 const { ccclass } = _decorator
 
-@ccclass('HitDetector')
-export class HitDetector extends Component {
+@ccclass('PlayerCollision')
+export class PlayerCollision extends Component {
   private collider: Collider2D | null = null
 
   onLoad() {
@@ -499,52 +598,112 @@ export class HitDetector extends Component {
     otherCollider: Collider2D,
     contact: IPhysics2DContact | null,
   ) {
-    console.log('碰撞到：', otherCollider.node.name)
+    console.log('碰到了：', otherCollider.node.name)
+
+    if (otherCollider.node.name === 'Coin') {
+      otherCollider.node.destroy()
+    }
   }
 }
 ```
 
-## 场景切换
+简单小游戏只需要判断碰撞时，可以先使用 Builtin 2D；需要重力、速度、弹跳等完整刚体效果时，再使用 Box2D。
 
-先在构建发布面板中加入目标场景，再通过场景名切换：
-
-```ts
-import { director } from 'cc'
-
-director.loadScene('game')
-```
-
-需要跨场景保留的管理节点，可以使用：
+## 常用节点操作速查
 
 ```ts
-import { director } from 'cc'
+import { find, Label, Sprite, Vec3 } from 'cc'
 
-director.addPersistRootNode(this.node)
+// 获取当前节点上的组件
+const sprite = this.getComponent(Sprite)
+
+// 获取子节点
+const button = this.node.getChildByName('Button')
+
+// 按路径查找
+const score = find('Canvas/HUD/Score')
+
+// 获取和修改位置
+const position = this.node.position
+this.node.setPosition(new Vec3(100, 50, 0))
+
+// 获取和修改世界位置
+const worldPosition = this.node.worldPosition
+this.node.setWorldPosition(0, 0, 0)
+
+// 显示和隐藏
+this.node.active = true
+this.node.active = false
+
+// 获取文字并修改
+const label = this.getComponent(Label)
+if (label) label.string = '游戏开始'
+
+// 销毁节点
+this.node.destroy()
 ```
 
-持久节点必须是场景根节点的直接子节点，并注意避免切换场景后重复创建。
+`find()` 和 `getComponent()` 不要放在 `update()` 里反复执行，通常在 `onLoad()` 中获取一次并保存。
 
-## 2D 性能基础
+## 常见问题
 
-- 不要在 `update()` 中频繁执行 `find()`、`getComponent()` 或创建临时数组。
-- 大量重复创建的节点使用对象池。
-- 合理使用图集，让连续渲染节点尽量使用同一纹理和材质，减少 Draw Call。
-- 不需要每帧执行的逻辑，使用事件或 `schedule()` 定时执行。
-- 不再使用的动态资源要结合引用计数和 Asset Manager 正确释放。
-- 物理碰撞体形状越简单越好，避免滥用复杂多边形碰撞体。
-- 真机性能与编辑器预览差异较大，发布前应在目标设备上测试。
+### 脚本拖不到节点上
 
-## 3.8.x 与旧教程写法对照
+先看控制台。只要项目里有 TypeScript 编译错误，新脚本就可能无法正常识别。还要检查 `@ccclass` 名称是否重复。
 
-| 旧版常见写法 | 3.8.x 推荐写法 |
+### 点节点没有触摸事件
+
+检查：
+
+- 节点是否有 `UITransform`。
+- `UITransform` 的宽高是不是 0。
+- 节点是否在 `Canvas` 下。
+- 是否被上层节点挡住。
+- 脚本或节点是否处于启用状态。
+
+### 图片显示不出来
+
+检查 `Sprite` 的 `SpriteFrame` 是否为空，节点是否启用，颜色透明度是否为 0，以及节点是不是放在 `Canvas` 下。
+
+### 事件执行了多次
+
+注册和取消要成对出现：
+
+```ts
+onEnable() {
+  this.node.on(Node.EventType.TOUCH_END, this.onClick, this)
+}
+
+onDisable() {
+  this.node.off(Node.EventType.TOUCH_END, this.onClick, this)
+}
+```
+
+## 3.8.x 与旧写法对照
+
+| 2.x 旧写法 | 3.8.x 写法 |
 | --- | --- |
-| `cc.Class({...})` | TypeScript 类、`@ccclass`、`extends Component` |
-| 全局 `cc.Node` | `import { Node } from 'cc'` |
+| `cc.Class({...})` | `@ccclass` + `class extends Component` |
+| `cc.Node` | `import { Node } from 'cc'` |
 | `cc.loader.loadRes()` | `resources.load()` 或 Asset Bundle |
-| `cc.instantiate(prefab)` | 从 `cc` 导入 `instantiate()` |
+| `cc.instantiate()` | 导入 `instantiate()` |
 | `node.runAction()` | `tween()` 或动画系统 |
-| `cc.systemEvent` | 全局 `input` 对象 |
-| 字符串 `'touch-start'` | `Node.EventType.TOUCH_START` |
+| `cc.systemEvent` | `input` |
+| `'touch-start'` | `Node.EventType.TOUCH_START` |
+
+## 入门练习顺序
+
+建议按这个顺序自己做一遍：
+
+1. 点击按钮让分数增加。
+2. 用 WASD 移动角色。
+3. 点击金币后销毁金币并加分。
+4. 用预制体生成子弹。
+5. 做一个 10 秒倒计时。
+6. 时间结束后打开结算弹窗。
+7. 点击重新开始，重新加载当前场景。
+
+把这几个小功能做完，Cocos Creator 2D 的基本工作方式就清楚了。
 
 ## 官方资料
 
