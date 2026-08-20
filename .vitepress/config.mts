@@ -69,6 +69,12 @@ export default defineConfig({
         ]
       },
       {
+        text: 'Cocos', items: [
+          { text: 'Cocos', link: '/cocos' },
+          { text: '3.8.x 2D 基础', link: '/cocos/basic-2d' },
+        ]
+      },
+      {
         text: '桌面端', items: [
           { text: '全局屏幕取色器', link: '/electron/color-picker' },
           { text: '打包自动代码签名', link: '/electron/code-signing' },
@@ -113,6 +119,13 @@ export default defineConfig({
             ]
           },
           { text: 'Jetpack Compose', link: '/flutter/compose' },
+        ]
+      },
+      {
+        text: 'Cocos',
+        items: [
+          { text: 'Cocos 介绍', link: '/cocos' },
+          { text: '3.8.x 2D 基础', link: '/cocos/basic-2d' },
         ]
       },
       {
