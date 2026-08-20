@@ -1,5 +1,7 @@
 import { defineConfig } from 'vitepress'
-export const baseUrl = process.env.VERCEL ? '/' : '/blog/'
+// GitHub Pages 部署在 /blog/ 子路径，Vercel 和本地开发部署在域名根路径。
+// GITHUB_ACTIONS 是 GitHub Actions 始终提供的环境变量，不依赖 Vercel 项目设置。
+export const baseUrl = process.env.GITHUB_ACTIONS === 'true' ? '/blog/' : '/'
 import timeline from "vitepress-markdown-timeline";
 export default defineConfig({
   base: baseUrl,
