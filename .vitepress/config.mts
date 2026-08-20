@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitepress'
-export const baseUrl = '/blog/'
+export const baseUrl = process.env.VERCEL ? '/' : '/blog/'
 import timeline from "vitepress-markdown-timeline";
 export default defineConfig({
   base: baseUrl,
