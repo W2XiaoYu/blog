@@ -805,7 +805,7 @@ class UnZip {
 
 ## 文件切片上传（前端部分）
 >
-> 相关文档：[Go 后端实现](../back-end/go.md)
+> 相关文档：[Go 后端实现](../back-end/go)
 
 
 

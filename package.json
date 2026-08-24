@@ -1,8 +1,11 @@
 {
+  "name": "congwong-notes",
+  "private": true,
+  "description": "CongWong 的 VitePress 技术笔记",
+  "packageManager": "pnpm@10.26.1",
   "devDependencies": {
     "vitepress": "^1.6.4",
-    "vitepress-markdown-timeline": "^1.2.2",
-    "vitepress-theme-website": "^1.0.8"
+    "vitepress-markdown-timeline": "^1.2.2"
   },
   "scripts": {
     "docs:dev": "vitepress dev",
@@ -10,8 +13,6 @@
     "docs:preview": "vitepress preview"
   },
   "dependencies": {
-    "@vueuse/core": "^14.4.0",
-    "oh-my-live2d": "^0.19.3",
     "vue": "^3.5.40"
   }
 }

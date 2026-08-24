@@ -88,7 +88,7 @@ CSC_SHA1=dd722d25caee464c9f560f39a2cb008c6dfde521
 
 加进 `.gitignore`：
 
-```gitignore
+```
 # 代码签名指纹（本地配置，不提交）
 scripts/sign.env
 ```

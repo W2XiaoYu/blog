@@ -18,11 +18,9 @@ env:
   TZ: Asia/Shanghai # 设置时区为上海，影响日志时间和构建中时间相关函数
 
 # ========== 权限设置 ==========
-# 最小权限原则：仅授予必要的权限
+# 构建只需要读取源码；部署权限仅授予 deploy job。
 permissions:
-  contents: read   # 读取仓库代码
-  pages: write     # 写入 GitHub Pages 资源
-  id-token: write  # 用于 OIDC token 认证（部署 Pages 需要）
+  contents: read
 
 # ========== 并发控制 ==========
 # 同一时间只允许一个 Pages 部署流程运行
@@ -37,7 +35,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    # 使用 Node.js 22 运行（pnpm 11+ 需要 Node.js 18 以上）
+    # 使用 Node.js 22 构建站点
     strategy:
       matrix:
         node-version: [22]
@@ -55,11 +53,11 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      # 3. 安装 pnpm（版本跟随 latest，当前为 pnpm 11.x）
+      # 3. 安装与 package.json 对齐的 pnpm 版本
       - uses: pnpm/action-setup@v4
         name: Install pnpm
         with:
-          version: latest   # 如需锁定版本可改为具体版本号，如 "11.0.0"
+          version: 10.26.1
           run_install: false # 不在这里安装依赖，交给下一步处理
 
       # 4. 安装项目依赖
@@ -73,26 +71,25 @@ jobs:
         run: |
           pnpm run docs:build
 
-      # 6. 使用 Jekyll 处理静态资源（GitHub Pages 要求）
-      # 将 .vitepress/dist 的内容复制到 ./_site
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
-        with:
-          source: .vitepress/dist
-          destination: ./_site
-
-      # 7. 将 _site 目录打包为 artifact，传递给部署任务
+      # 6. 将 VitePress 构建产物直接打包并传递给部署任务
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
+        with:
+          path: .vitepress/dist
 
   # -------------------- 第二步：部署 --------------------
   deploy:
+    # PR 只验证构建，不发布站点。
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     # 部署环境配置
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }} # 部署完成后输出的页面 URL
     runs-on: ubuntu-latest
     needs: build # 等待构建任务完成后才执行
+    permissions:
+      pages: write
+      id-token: write
     steps:
       # 部署到 GitHub Pages
       - name: Deploy to GitHub Pages
