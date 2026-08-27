@@ -36,5 +36,5 @@ features:
   - title: 桌面端
     details: 技术栈：Electron 桌面应用开发（取色器、自动代码签名等）。
   - title: 后端 & 运维
-    details: Go 脚本、Node、Nginx、Linux、vim 等运维相关笔记。
+    details: Go / Gin、PostgreSQL 数据库设计、Docker、Nginx 与 Linux 运维笔记。
 ---

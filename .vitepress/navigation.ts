@@ -33,8 +33,27 @@ const electronItems = [
   { text: '透明窗口 slider 拖拽光标', link: '/electron/slider-drag-cursor' },
 ]
 
-const backendItems = [
+const databaseDesignItems = [
+  { text: '多账号登录与账号合并', link: '/back-end/database-design/multi-account-auth-merge' },
+]
+
+const backendNavItems = [
   { text: 'Go 语言', link: '/back-end/go' },
+  { text: '数据库设计', link: '/back-end/database-design' },
+  { text: 'Docker 部署', link: '/back-end/docker-deploy' },
+  { text: 'Nginx', link: '/back-end/nginx' },
+  { text: 'Linux 命令', link: '/back-end/command' },
+  { text: 'vim 编辑器', link: '/back-end/vim' },
+]
+
+const backendSidebarItems = [
+  { text: 'Go 语言', link: '/back-end/go' },
+  {
+    text: '数据库设计',
+    link: '/back-end/database-design',
+    collapsed: false,
+    items: databaseDesignItems,
+  },
   { text: 'Docker 部署', link: '/back-end/docker-deploy' },
   { text: 'Nginx', link: '/back-end/nginx' },
   { text: 'Linux 命令', link: '/back-end/command' },
@@ -53,7 +72,7 @@ export const nav = [
   },
   { text: 'Cocos', items: cocosNavItems },
   { text: '桌面端', items: electronItems },
-  { text: '后端 & 运维', items: backendItems },
+  { text: '后端 & 运维', items: backendNavItems },
 ] satisfies DefaultTheme.NavItem[]
 
 export const sidebar = [
@@ -68,5 +87,5 @@ export const sidebar = [
   },
   { text: 'Cocos', items: cocosItems },
   { text: '桌面端', items: electronItems },
-  { text: '后端 & 运维', items: backendItems },
+  { text: '后端 & 运维', items: backendSidebarItems },
 ] satisfies DefaultTheme.SidebarItem[]
