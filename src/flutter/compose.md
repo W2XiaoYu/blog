@@ -1,9 +1,9 @@
 
-# jetpack Compose 学习
+# Jetpack Compose 学习笔记
 
-项目中有一些原生项目，flutter有时候需要使用原生方法，所以还是需要去学习一点原生。
+Flutter 项目走到原生能力时，最终还是会碰到 Android。与其每次只抄一段桥接代码，不如把 Compose、协程和数据层顺着学一遍，也能更从容地读懂插件背后的实现。
 
-本文按主题整理：
+这份笔记按下面几条线整理：
 
 * 一、[Compose 基础](#一compose-基础)：布局组件、Modifier、状态管理、动画、导航、主题
 * 二、[Kotlin 协程](#二kotlin-协程)：协程基础、Flow 流
@@ -90,7 +90,7 @@ Scaffold(
 }
 ```
 
-#### Scaffold、Drawer和bottomBar
+#### Scaffold、Drawer 和 BottomBar
 
 ```kt
 val drawerState = rememberDrawerState(DrawerValue.Closed)//设置默认开启状态
@@ -673,7 +673,7 @@ Switch(
 )
 ```
 
-### 自定义Tab
+### 自定义 Tab
 
 1、封装tabROw
 
@@ -1662,7 +1662,7 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
 }
 ```
 
-### 架构总结
+### 各层如何衔接
 
 * 界面层（Compose）只做渲染和发事件，不写业务逻辑
 * ViewModel 持有状态（StateFlow）和处理事件，不碰 Activity / Context
@@ -1684,7 +1684,7 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
  implementation (libs.androidx.media3.exoplayer)
 ```
 
-#### videoViewModel.kt
+#### `VideoViewModel.kt`
 
 ```kt
 
@@ -1759,7 +1759,7 @@ class VideoViewModel : ViewModel() {
 }
 ```
 
-#### videoCompose组件
+#### Video Compose 组件
 
 ```kt
 
@@ -1914,7 +1914,7 @@ fun LandingVideo() {
 }
 ```
 
-#### 自定义控制界面 CustomPlayerControls.kt
+#### 自定义控制界面 `CustomPlayerControls.kt`
 
 ```kt
 @OptIn(UnstableApi::class)
@@ -2248,7 +2248,7 @@ const val CHANNEL = BuildConfig.CHANNEL
 
 ### 安卓跳转微信小程序
 
-#### 安装微信SDK
+#### 安装微信 SDK
 
 ```kt
  implementation(libs.wechat.sdk.android)//微信SDK
@@ -2313,7 +2313,7 @@ WeChatUtils.init(it.initConfig?.wxPayAppId ?: "")
 WeChatUtils.jumpWxMiniProgram( landingPageInfo?.courseId ?: 0)
 ```
 
-#### 从小程序返回App
+#### 从小程序返回 App
 
 ```kt
 //fest.xml 新增
@@ -2354,12 +2354,11 @@ class WXEntryActivity : ComponentActivity(), IWXAPIEventHandler {
 
 ```
 
-#### 注意项
+#### 签名配置排查
 
-如何当前应用的包名和小程序配置的包名不一致的话会提示签名配置不一致，需要检查包名和配置。<br/>
-如果包名和小程序配置都没有问题的话，请检查build.gradle.kts 中 buildTypes 中 debug和release中的signingConfig配置是否正确。
+当前应用包名与小程序后台配置不一致时，微信会提示签名配置错误。包名确认无误后，再检查 `build.gradle.kts` 中 `debug`、`release` 两套 `signingConfig` 是否指向了正确证书。
 
-### APP跳转微信获客链接
+### App 跳转微信获客链接
 
 ```kt
 fun jumpWxCustomerLink(customerLink: String) {

@@ -5,10 +5,11 @@ title: 代码片段
 
 # 代码片段
 
-## 打印数据
+一些从 Flutter 项目里留下来的独立实现，按遇到的问题往下排。每段代码都尽量保留调用入口，方便以后拿回来改。
 
-可打印json并且格式化，可解决打印超出截断问题 <br/>
-需要用到common_utils插件，请先自行安装
+## 格式化打印 JSON
+
+这段封装会分段打印并格式化 JSON，解决长日志被控制台截断的问题。代码依赖 `common_utils`。
 
 ```dart
 class Log {
@@ -691,10 +692,9 @@ class _VideoPlayerItemState extends State<VideoPlayerItem> {
 }
 ```
 
-## 在flutter中解压文件名字乱码问题
+## Flutter 解压 ZIP 时中文文件名乱码
 
-flutter里常用的解压软件是`archive`,它默认支持utf-8的,而window上的编码格式是GBK的,就会导致,在window系统上压缩的文件,解压后中文是乱码的.
-但是archive不支持配置编码,所以我们就需要手动去处理文件名的编码问题.这时候使用到`charset_converter`来处理编码问题.
+Flutter 常用 `archive` 解压 ZIP，它默认按 UTF-8 处理文件名。部分 Windows 压缩工具留下的却是 GBK 或 GB18030 编码，于是中文文件名解压后会变成乱码。`archive` 没有直接暴露编码配置，这里借助 `charset_converter` 把文件名重新解码。
 
 ```dart
 import 'dart:convert';
@@ -803,13 +803,13 @@ class UnZip {
 
 ```
 
-## 文件切片上传（前端部分）
+## 文件分片上传（Flutter 端）
 >
 > 相关文档：[Go 后端实现](../back-end/go)
 
 
 
-flutter端使用的库
+Flutter 端使用三个依赖：
 
 ```yaml
   file_picker: ^10.3.8
@@ -817,7 +817,7 @@ flutter端使用的库
   dio: ^5.7.0
 ```
 
-UI层就不再赘述了
+下面只保留选择文件、计算哈希、切片和上传的主流程，UI 部分按项目接入即可。
 
 ```dart
 import 'dart:io';

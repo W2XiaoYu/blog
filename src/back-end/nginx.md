@@ -1,5 +1,7 @@
 
-# Ubuntu  安装Nginx
+# 在 Ubuntu 上安装和配置 Nginx
+
+从安装、服务管理到反向代理，把一台新 Ubuntu 服务器上最常用的 Nginx 操作顺着走一遍。
 
 ## 安装
 
@@ -9,7 +11,7 @@ sudo apt upgrade # 升级软件包
 sudo apt install nginx 
 ```
 
-验证安装结果
+安装完成后先看一眼版本：
 
 ```shell
 nginx -v
@@ -61,7 +63,7 @@ sudo systemctl enable nginx   # 启用开机自启动
 sudo systemctl disable nginx  # 禁止开机自启动
 ```
 
-## 配置Nginx
+## 配置 Nginx
 
 在/etc/nginx/nginx.conf<br/>
 

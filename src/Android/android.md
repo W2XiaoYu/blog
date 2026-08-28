@@ -5,6 +5,6 @@ title: Android
 
 # Android 原生
 
-记录 Android 原生开发的学习笔记。Flutter 项目中常需要通过原生方法实现部分能力，因此需要了解一些原生知识。原生笔记已归入 [移动端 → Flutter](../flutter#jetpack-compose) 分类下统一维护。
+Flutter 偶尔也要越过插件层，直接和 Android 打交道。相关笔记已经归到 [移动端 → Flutter](../flutter#jetpack-compose) 下，这里只保留入口。
 
 - [Jetpack Compose](../flutter/compose) — Compose 组件学习与实践

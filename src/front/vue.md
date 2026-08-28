@@ -1,12 +1,13 @@
 
-# Vue笔记
+# Vue 笔记
 
+Vue 项目里用过、以后还可能再用到的写法都收在这里。内容不追求从头讲一遍框架，更多是自定义指令、交互细节和排查记录。
 
 <ColorsUtils />
 
-## vue自定义指令
+## Vue 自定义指令
 
-### v-animate 动画指令，实现元素在视口内执行动画/也可以实现图片懒加载
+### `v-animate`：元素进入视口后播放动画
 
 ```ts
 
@@ -100,7 +101,7 @@ export function authDirective(app: App) {
 
 ## 代码片段
 
-### 纯前端实现版本更新提醒(Vite和Element Plus)
+### 纯前端实现版本更新提醒（Vite + Element Plus）
 
 ```ts
 vite.config.ts
@@ -340,7 +341,7 @@ onBeforeUnmount(() => {
 })
 ```
 
-### 仿Element Plus主题切换
+### 仿 Element Plus 主题切换
 
 ```css
 //index.css 
@@ -405,7 +406,7 @@ const handleChangeTheme = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) =
 
 ```
 
-## UNI-APP APP端跳转微信打开获客链接
+## uni-app 跳转微信获客链接
 
 ```js
 const encodedUrl = encodeURIComponent(
@@ -415,10 +416,9 @@ const encodedUrl = encodeURIComponent(
 
 ```
 
-## uniapp APP打包后 启动很慢的问题
+## uni-app 打包后启动缓慢
 
-场景： App打包后安装使用，杀死后台后点击图标再次启动，会卡在启动界面很久，时间甚至达到了八九秒。
-解决方法：
+应用安装后，如果从后台彻底结束进程，再次点击图标可能会在启动页停上八九秒。可以先关闭默认等待提示，等首屏准备好后主动收起启动页：
 
 ```ts
 //manifest.json 中配置

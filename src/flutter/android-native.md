@@ -5,7 +5,9 @@ title: 安卓原生
 
 # 安卓原生
 
-## 安卓端获取OAID问题
+有些能力隔着 Flutter 插件并不好处理，直接补一小段 Android 原生代码反而更省事。这里记录 OAID 获取和返回键退出两个例子。
+
+## 获取 OAID
 
 ```kt
 
@@ -80,7 +82,7 @@ class DeviceIdentityUtil(private val context: Context) {
 }
 ```
 
-在flutter代码中调用
+Flutter 侧通过同名 MethodChannel 调用：
 
 ```dart
 class OAID {
@@ -91,7 +93,7 @@ class OAID {
 }
 ```
 
-## 安卓端 连续两次返回实现退出应用
+## 连续按两次返回键退出应用
 
 ```dart
 DateTime? _lastPressedAt;

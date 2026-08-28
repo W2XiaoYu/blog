@@ -5,7 +5,7 @@ title: 前端
 
 # 前端
 
-记录 Web 前端的实战笔记与代码片段，主要围绕 Vue、React 生态。内容按主题分类如下：
+这里收着 Vue、React 和浏览器 API 的实践笔记。既有完整问题的拆解，也有随手可取的小段代码。
 
 - [Vue](./front/vue) — 自定义指令、动画指令、图片懒加载等
 - [React](./front/react) — React 学习与实践笔记

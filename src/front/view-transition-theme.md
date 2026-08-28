@@ -1,8 +1,8 @@
 # View Transitions API 实现圆形扩散主题切换（仿 B 站客户端效果）
 
-Electron 桌面客户端、VitePress 博客、Wails 桌面应用——只要底层是 Chromium（WebView2 / Chromium 内核），都可以用 **View Transitions API** 实现类似哔哩哔哩客户端那种「点击按钮，圆形扩散切换主题」的丝滑动画效果。
+主题切换不一定只能淡入淡出。Electron、VitePress 和 Wails 的页面只要运行在支持 View Transitions API 的内核上，就能让颜色从点击位置铺开，像一圈水波慢慢盖住整个窗口。
 
-本文从原理到落地，详细讲解如何实现 **双向动画**：切到暗色时圆形扩散铺开，切回亮色时圆形收回缩小，无闪烁。
+这里把两个方向都做完整：切到暗色时圆形向外扩散，回到亮色时再向内收拢，同时处理动画结束时的闪烁问题。
 
 ## 效果预览
 
@@ -20,7 +20,7 @@ Electron 桌面客户端、VitePress 博客、Wails 桌面应用——只要底�
 3. 浏览器对更新后的页面再**截图**（生成 `::view-transition-new(root)` 伪元素）
 4. 默认播放一个交叉淡入淡出动画
 
-我们要做的，就是**关掉默认的淡入淡出，换成自定义的 `clip-path: circle()` 圆形动画**。
+实现的关键并不复杂：关掉默认淡入淡出，换成自己的 `clip-path: circle()` 圆形动画。
 
 ### 为什么用 CSS @keyframes 而不是 JS animate()
 
@@ -28,7 +28,7 @@ Electron 桌面客户端、VitePress 博客、Wails 桌面应用——只要底�
 最初用 `document.documentElement.animate()` 对伪元素做动画，结果 **dark → light 的收回动画完全不播放**，一瞬间就没了。
 :::
 
-原因是 JS `element.animate()` 对 `::view-transition-old(root)` 伪元素的支持在某些 Chromium 版本上不可靠。**改用纯 CSS `@keyframes` + `animation` 属性后完美解决**。
+原因在于某些 Chromium 版本对 `element.animate()` 驱动 `::view-transition-old(root)` 的支持并不稳定。换成纯 CSS 的 `@keyframes` 和 `animation` 后，两个方向都能正常播放。
 
 ## 完整实现
 
@@ -175,7 +175,7 @@ document.documentElement.animate(
 
 ### 坑 2：收回动画不播放
 
-用 JS `document.documentElement.animate()` 对 `::view-transition-old(root)` 做动画，在某些环境下不生效。改用 CSS `@keyframes` + `animation` 属性后完美解决。
+用 JS `document.documentElement.animate()` 驱动 `::view-transition-old(root)` 时，某些环境不会播放动画。换成 CSS `@keyframes` 和 `animation` 后，两个方向都能正常工作。
 
 ### 坑 3：收回完成时闪烁
 
@@ -205,7 +205,7 @@ transition.finished.then(() => {
 
 `transition.ready` 在动画**刚准备播放**时就 resolve 了，此时清理 class 会导致 z-index 恢复默认，动画瞬间消失。
 
-## 为什么用 `circle(150%)` 而不是精确计算 maxR
+## 为什么用 `circle(150%)`，而不精确计算 `maxR`
 
 ```css
 /* 简洁写法，150% 相对于视口参考框 */
@@ -268,7 +268,7 @@ if (!('startViewTransition' in document)) {
 }
 ```
 
-## 总结
+## 实现要点
 
 | 要点 | 方案 |
 |------|------|

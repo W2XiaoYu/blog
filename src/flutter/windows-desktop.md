@@ -5,11 +5,13 @@ title: Windows 桌面
 
 # Windows 桌面
 
-## Windows系统托盘
+Flutter 到了 Windows 上，会遇到不少移动端没有的事情：系统托盘、多窗口、鼠标悬停和输入法切换。这里按问题记录已经验证过的处理方式。
 
-1. 安装`tray_manager: ^0.2.1`，安装高版本会有奇怪的bug(比如右键展示菜单后，点击其他区域应该隐藏菜单，试了好多版本都不生效。)
+## Windows 系统托盘
 
-2. 代码如下
+1. 安装 `tray_manager: ^0.2.1`。这个项目曾在较高版本里遇到右键菜单无法正常收起的问题，因此暂时固定在该版本。
+
+2. 初始化托盘并监听点击事件：
 
 ```dart
 class _MyHomePageState extends State<MyHomePage>
@@ -79,9 +81,9 @@ class _MyHomePageState extends State<MyHomePage>
 
 ```
 
-## Flutter Windows端使用desktop_multi_window 新建窗口遇到的问题
+## `desktop_multi_window` 新窗口找不到插件
 
-如题：在使用desktop_multi_window插件新建窗口的时候可以正常新建窗口，但是发现新窗口内无法使用flutter的插件，会报错,如下：
+`desktop_multi_window` 能正常创建新窗口，但新窗口里的 Flutter 插件没有完成注册，调用时会抛出 `MissingPluginException`：
 
 ```shell
 [ERROR:flutter/runtime/dart_vm_initializer.cc(41)] Unhandled Exception: MissingPluginException(No implementation found for method VideoOutputManager.Create on channel com.alexmercerind/media_kit_video)
@@ -94,9 +96,7 @@ class _MyHomePageState extends State<MyHomePage>
 
 ```
 
-参照文章[点我](https://blog.csdn.net/mchangtian/article/details/145837419)
-<br/>
-编辑`windows/runner/flutter_window.cpp`文件
+处理时需要编辑 `windows/runner/flutter_window.cpp`，在新窗口创建后补一次插件注册。参考：[Flutter desktop_multi_window 多窗口插件注册](https://blog.csdn.net/mchangtian/article/details/145837419)。
 
 ```cpp
 //在OnCreate() 方法添加
@@ -117,12 +117,12 @@ this->Show();
 
 ```
 
-## ValueNotifier的运用场景
+## 用 `ValueNotifier` 隔离局部 hover 状态
 
-使用 `ValueNotifier` 和`setState` 本质上都是在做 状态变更和刷新 UI，但它们有一些重要的区别，尤其是在交互复杂、性能要求高或组件重建频繁的桌面/Flutter Web 环境下，`ValueNotifier` 会更加优雅和高效。
+`ValueNotifier` 和 `setState` 都能触发 UI 更新，区别在于刷新范围。桌面端的 hover 状态变化很频繁，如果只想改一个按钮，用 `ValueNotifier` 把更新收在局部会更合适。
 
 <br>
-在windows端，如果想实现鼠标hover效果的同时并且支持事件处理，正常思路是：
+常见写法是用 `MouseRegion` 记录 hover，再由 `GestureDetector` 处理点击：
 
 ```dart
 MouseRegion(
@@ -145,9 +145,7 @@ MouseRegion(
 
 ```
 
-正常思路这样的确没有问题，hover效果也是可以看到，但是会发现`GestureDetector`的事件消失了
-,这是因为 `setState`触发整个`StatefulWidget` 的 `build()` 重建，导致了点击事件的丢失。
-这时候可以改用`ValueNotifier`来解决。
+视觉上的 hover 已经生效，但频繁调用 `setState` 会让整个 `StatefulWidget` 重建，某些交互里还可能打断点击。把状态换成 `ValueNotifier` 后，只重建按钮所在的小块区域：
 
 ```dart
 
@@ -196,7 +194,7 @@ MouseRegion(
 ),
 ```
 
-核心区别总结：
+两种方式的差别放在一起看更直观：
 
 | 对比项 | `setState` |`ValueNotifier`|
 |------|------|------|
@@ -206,11 +204,11 @@ MouseRegion(
 | 逻辑清晰度| 状态分散在 widget 树中 |状态集中，可封装复用|
 | 点击与 hover 不兼容时 |  容易在 `setState()` 导致点击丢失 |状态隔离，互不干扰，体验稳定|
 
-## Windows端输入框限制为英文
+## Windows 输入框切换到英文输入法
 
-在移动端中，我们可以根据`keyboardType`来使用不同的键盘。但是在Window端这样写就没有任何作用了，因为Window端是主要是键盘概念。这时候我们就需要指定键盘：
+移动端可以通过 `keyboardType` 请求不同的软键盘，Windows 使用的却是系统输入法，因此这个属性不起作用。需要限制英文输入时，只能从原生窗口切换键盘布局或输入法状态。
 
-1. 指定为英文键盘(美式键盘)
+1. 激活美式英文键盘布局：
 
 ```cpp
 HKL hkl = LoadKeyboardLayout(L"00000409", KLF_ACTIVATE);
@@ -226,7 +224,7 @@ if (hkl != NULL) {
 
 ```
 
-1. 把当前输入法改为英文
+2. 把当前输入法切到英文模式：
 
 ```cpp
 HWND hwnd = GetForegroundWindow();
@@ -253,4 +251,4 @@ if (success) {
 }
 ```
 
-以上方法都是在Windows工程下注册的方法，后在flutter端调用的。
+这两段代码都注册在 Windows Runner 中，再通过 MethodChannel 从 Flutter 侧调用。

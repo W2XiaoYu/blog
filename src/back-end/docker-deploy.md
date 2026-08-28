@@ -1,11 +1,11 @@
 ---
 title: Docker 部署前后端分离项目（Go + React + PostgreSQL）
-description: 记录一次完整的 Docker Compose 部署实践，从配置到踩坑的全过程。
+description: 一次 Go、React 与 PostgreSQL 项目的 Docker Compose 部署记录。
 ---
 
 # Docker 部署前后端分离项目（Go + React + PostgreSQL）
 
-> 这篇文章记录了我把一个 **Go/Gin + React + PostgreSQL** 的后台管理系统，用 Docker Compose 部署到腾讯云服务器上的完整过程。包括最终的配置、踩过的坑、以及排查思路。
+这是一次真实的上线记录：把 **Go/Gin + React + PostgreSQL** 的后台管理系统装进 Docker Compose，再部署到腾讯云。文中保留最后用下来的配置，也留下 Node 版本、跨平台 lock 文件和数据库约束这些途中碰到的坑。
 
 ## 项目架构
 
@@ -115,7 +115,7 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 EXPOSE 80
 ```
 
-> 注意：这里我用的是 `npm install` 而不是 `npm ci`，具体原因见下方踩坑记录。
+> 这里使用 `npm install` 而不是 `npm ci`，原因放在后面的实际问题里。
 
 ### 前端 nginx.conf
 
@@ -191,7 +191,7 @@ docker compose up -d --build
 - 系统：`http://<服务器公网IP>`
 - Swagger：`http://<服务器公网IP>/swagger/index.html`
 
-## 踩坑记录
+## 实际遇到的问题
 
 ### 坑 1：PostgreSQL 镜像版本写 `postgres:18` 拉不到
 
@@ -283,13 +283,13 @@ docker compose up -d --build backend
 docker compose up -d --build frontend
 ```
 
-## 后续建议
+## 上线后再补几件事
 
 1. **改默认密码**：首次登录 `admin / admin123` 后立即修改
 2. **上 HTTPS**：没有域名备案的话，可以买个域名 + 云厂商证书，或者在 nginx 容器里挂证书
 3. **数据库备份**：设置定时任务备份 `pgdata` 卷或导出 SQL
 4. **资源限制**：compose 里给每个服务加 `deploy.resources.limits`
 
-## 总结
+## 回头看
 
-Docker Compose 部署前后端分离项目整体思路很清晰：一个 `docker-compose.yml` 管理数据库、后端、前端三个容器，nginx 作为统一入口。实际踩坑主要集中在前端构建环境（Node 版本、lock 文件跨平台问题）和后端数据模型（可空字段与外键约束）。把这些问题记录下来，下次部署就能快很多。
+整套部署最后只剩一条清楚的路径：`docker-compose.yml` 管住数据库、后端和前端三个容器，nginx 站在最外面接住流量。真正耗时间的反而不是 Compose 本身，而是 Node 版本、跨平台 lock 文件、可空字段和外键这些边角。把它们记下来，下次再部署同类项目，就不必重走一遍弯路。

@@ -1,10 +1,10 @@
 # Electron 打包自动代码签名（electron-builder）
 
-Electron 应用用 `electron-builder` 打包后，默认产出的 exe 是**未签名**的。用户首次运行会触发 Windows SmartScreen 红色警告，体验很差。本文记录如何让 `npm run build:win` 每次**自动签名所有产物**（主 exe + 所有 dll + .node 原生模块 + NSIS 安装包），零手动干预。
+Windows 安装包可以手动签一次，但项目每次发版都这么做，很快就会漏。这里把签名接进 `electron-builder`：运行 `npm run build:win` 时，主程序、原生模块和 NSIS 安装包沿着构建流程依次完成签名。
 
 ## 背景：electron-builder 默认签了什么
 
-> 这是最容易踩的坑：很多人以为配了证书就万事大吉，结果只签了主 exe。
+> 配上证书不等于安装目录里的文件都已经签好。主程序有签名，解包目录里的 DLL 和 `.node` 仍可能是空白的。
 
 electron-builder 默认只会签名：
 
@@ -14,7 +14,7 @@ electron-builder 默认只会签名：
 
 **而打包进 `resources/app.asar.unpacked` 里的 `.dll`、`.node` 原生模块不会被签名**。杀毒软件扫描安装目录时，这些未签名的 dll 仍可能被标记为可疑。
 
-要签名内部 dll，最可靠的方式是用 **afterPack 钩子** 手动调 signtool 批量签名（本文先讲主流程，钩子方案见末尾）。
+内部 DLL 需要在 **afterPack 钩子**里调用 signtool 批量处理。下面先把主流程接通，再补这一段钩子。
 
 ## 前置：证书从哪来
 
@@ -268,12 +268,12 @@ A：改 `scripts/sign.env` 里的指纹即可，配置文件和代码都不用�
 **Q：指纹泄露有风险吗？**
 A：没有。指纹是证书的公开标识，签名需要私钥（在你机器上），别人拿指纹无法冒用。
 
-## 总结
+## 最后留下的构建链路
 
-最终方案的核心是三件事：
+配置分成三块，各自负责一段：
 
 1. **`electron-builder.yml` 的 `win.signtoolOptions`** 配置指纹 + 时间戳 + sha256（electron-builder 自动签主 exe + 安装包）
 2. **`scripts/with-sign.mjs` + `sign.env`** 实现每次打包自动加载指纹（指纹不进 git）
 3. **可选的 `afterPack` 钩子** 签名内部所有 dll/node（默认不签）
 
-配好后，`npm run build:win` 一条命令完成「打包 → 签名主 exe → 签名 dll → 生成安装包 → 签名安装包」全流程。
+全部接好以后，一条 `npm run build:win` 会顺次走完“打包 → 签名主程序 → 签名 DLL → 生成安装包 → 签名安装包”。证书仍留在系统证书库里，仓库只保存构建方法。

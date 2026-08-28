@@ -1,7 +1,7 @@
 
 # Electron 实现全局屏幕取色器
 
-在 Electron 桌面应用中实现一个类似微信截图工具的全局取色器：点击取色按钮后，出现全屏放大镜浮层，鼠标移动时实时显示像素级放大预览，左键点击取色并复制到剪贴板。
+项目里需要一支随时能伸到屏幕任何位置的吸管：点下按钮，窗口退到后面，放大镜贴着鼠标走；看准颜色后按一下左键，色值便进了剪贴板。交互很像微信截图，差别是这里把取色单独做成了 Electron 的一项能力。
 
 ## 最终效果
 
@@ -16,7 +16,7 @@
 pnpm add screenshot-desktop
 ```
 
-> 为什么不用 Electron 自带的 `desktopCapturer`？因为在部分 Windows 环境下 `desktopCapturer.getSources()` 会挂起主进程导致整个应用卡死。`screenshot-desktop` 使用 Windows 原生截图 API，更稳定。
+> 项目最初使用 Electron 自带的 `desktopCapturer`，但在部分 Windows 机器上遇到过 `desktopCapturer.getSources()` 长时间挂起，连主进程也一起卡住。换成调用系统截图能力的 `screenshot-desktop` 后，这个问题没有再出现。
 
 ## 整体架构
 
@@ -527,7 +527,7 @@ useEffect(() => {
 }, [isPickMode])
 ```
 
-## 踩坑总结
+## 几个容易出错的地方
 
 ### 1. Windows 透明窗口 close() 死锁
 
@@ -583,3 +583,5 @@ this.mainWindow.moveTop()
 this.mainWindow.show()
 this.mainWindow.focus()
 ```
+
+取色器最麻烦的地方并不在 canvas，而在几套坐标之间来回换算：屏幕坐标、窗口坐标、CSS 像素和截图像素。把缩放比例和多屏偏移理顺以后，放大镜绘制、剪贴板复制反而都只是顺手的工作。

@@ -5,7 +5,7 @@ title: Cocos Creator 3.8.x 2D 基础
 
 # Cocos Creator 3.8.x 2D 基础
 
-这篇笔记只讲 Cocos Creator **3.8.x** 中最常用的 2D 内容。示例全部使用 TypeScript，可以直接复制到项目里练习。
+这份笔记只走 Cocos Creator **3.8.x** 的 2D 主线：先认识场景、节点和组件，再慢慢接上事件、资源、动画与物理。示例统一使用 TypeScript，可以边看边放进空项目里练习。
 
 > 看到 `cc.Class`、`cc.loader`、`cc.systemEvent`、`runAction` 时要注意：这些大多是 2.x 旧教程的写法，不要直接放进 3.8.x 项目。
 
@@ -691,9 +691,9 @@ onDisable() {
 | `cc.systemEvent` | `input` |
 | `'touch-start'` | `Node.EventType.TOUCH_START` |
 
-## 入门练习顺序
+## 动手练一遍
 
-建议按这个顺序自己做一遍：
+概念看完容易散，最好按这个顺序亲手串一次：
 
 1. 点击按钮让分数增加。
 2. 用 WASD 移动角色。
@@ -703,7 +703,7 @@ onDisable() {
 6. 时间结束后打开结算弹窗。
 7. 点击重新开始，重新加载当前场景。
 
-把这几个小功能做完，Cocos Creator 2D 的基本工作方式就清楚了。
+等重新开始按钮真正把场景跑起来，Cocos Creator 2D 的基本工作方式也就连成了一条线。
 
 ## 官方资料
 

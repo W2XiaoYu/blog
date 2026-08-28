@@ -1,6 +1,8 @@
 
 # 前端代码片段
 
+这里不放完整项目，只收一些短小、独立、复制后稍作调整就能用的前端代码。
+
 ## EventBus
 
 ```js
@@ -48,9 +50,9 @@ class EventBus{
 
 ## Vue 计算属性传参
 
-场景：在购物车页面，我们通常需要显示每件商品的小计（如：`单价 * 数量`）。如果使用普通的函数或者直接在模板里计算，每次组件更新时这些小计都会重新计算，即使商品数量没有变化也会重新执行，浪费性能。
+购物车通常要显示每件商品的小计，也就是 `单价 × 数量`。如果直接在模板里调用普通函数，组件每次更新都会重算所有商品，即使价格和数量根本没变。
 <br/>
-目标：当某个商品的 `price` 和 `num`没有变化时，它的小计应该缓存，不应该重新计算。
+这里希望某件商品的 `price` 和 `num` 没有变化时，继续复用上一次结果。
 
 ```js
 const tableData = ref([
@@ -96,7 +98,7 @@ const computedPrice=useComputed(totalPrice)
 <p>小计为{{computedPrice(row).value}}</p>
 ```
 
-## 防抖Debounce
+## 防抖 Debounce
 
 ```js
 function debounce(fn,delay){
@@ -126,7 +128,7 @@ function debounce(fn,delay，immediate = true){
 
 ```
 
-## 节流Throttle
+## 节流 Throttle
 
 ```js
 function throttle(fn,delay){
@@ -141,7 +143,7 @@ function throttle(fn,delay){
 }
 ```
 
-## 手写bind
+## 手写 `bind`
 
 ```js
 Function.prototype.MyBind=function(context){
@@ -182,7 +184,7 @@ function union(arr1,arr2){
 
 ```
 
-## 手写Promise.all
+## 手写 `Promise.all`
 
 ```js
 //命名为myAll 避免覆盖原有的all方法

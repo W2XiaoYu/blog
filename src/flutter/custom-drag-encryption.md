@@ -5,7 +5,7 @@ title: 自定义拖拽与拖拽加密
 
 # Flutter Windows 桌面：自定义拖拽 + 拖拽加密实战
 
-> 本文记录 3A Launcher（基于 Flutter 的 Windows 桌面渲染器启动器）在「拖拽素材到外部应用」这件事上的完整方案：为什么不用现成的 `super_drag_and_drop`、如何用 `dart:ffi` 直接驱动 Win32 OLE 绕开幽灵图像、以及如何用 AES-256-GCM 给拖拽数据加密并与 C++ 渲染器对接。
+3A Launcher 需要把素材从 Flutter 窗口拖到资源管理器、3ds Max 和自家的渲染器。看似只是一次拖拽，最后却牵出了 OLE 幽灵图像、跨进程数据传递和私有素材防伪造三个问题。这篇记录最后落下来的方案：用 `dart:ffi` 驱动 Win32 OLE，自绘拖拽预览，再用 AES-256-GCM 把私有数据交给 C++ 渲染器。
 
 ## 背景：两个要解决的问题
 
@@ -533,7 +533,7 @@ constexpr int kScryptP = 1;
 constexpr int kKeyLength = 32;  // AES-256
 ```
 
-> 提示：C++ 端的完整实现（`DeriveKey` + scrypt + BCrypt AES-GCM + hex 解码 + JSON 提取）在项目 `docs/3a_drag_decrypt.{h,cpp}` 和 `docs/拖拽payload解密接入指南.md` 里有完整代码和接入示例（UE/VS），本文不再展开。
+> C++ 端的完整实现（`DeriveKey`、scrypt、BCrypt AES-GCM、hex 解码和 JSON 提取）放在项目的 `docs/3a_drag_decrypt.{h,cpp}` 与 `docs/拖拽payload解密接入指南.md`，其中也带了 UE/VS 接入示例，这里不再重复铺开。
 
 ---
 
@@ -579,11 +579,11 @@ wPtr[text.length] = 0; // 终止符
 
 ---
 
-## 小结
+## 回到最初的两个问题
 
-这套方案的核心思路可以归纳成两条：
+绕了一圈 FFI、COM 和加密，最后仍然落在两条边界上：
 
 1. **绕开 ghost image**：不用 `IDragSourceHelper`，自己创建分层窗口承载拖拽预览，配合隐藏应用窗口 + 阻塞式 `DoDragDrop`，从源头杜绝幽灵图像。
 2. **加密走文本通道**：把「拖给自家渲染器」的私有格式数据加密成字符串，走 CF_UNICODETEXT；标准格式继续走 CF_HDROP 明文。两者由扩展名白名单切换。
 
-如果只是想做「Flutter 桌面拖文件到外部应用」，`desktop_drop` / `super_drag_and_drop` 仍然是最省事的选择；只有遇到 ghost image 卡屏、或需要加密防伪造这种强需求时，才值得上这套 FFI + COM + AES-GCM 的重方案。希望能给做 Flutter Windows 桌面拖拽的朋友一点参考。
+如果只是把文件从 Flutter 拖到外部应用，`desktop_drop` 或 `super_drag_and_drop` 仍然省事得多。只有 ghost image 已经影响使用，或者拖拽数据确实需要验真时，这套 FFI + COM + AES-GCM 的重方案才值得背上。
