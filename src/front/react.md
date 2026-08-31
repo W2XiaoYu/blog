@@ -102,7 +102,7 @@ export default MyComponent;
 
 ## React 函数组件生命周期
 
-在 React 函数组件中，没有像类组件那样固定的生命周期方法，但可以使用 React Hooks 来模拟实现类似的生命周期功能。下面详细介绍如何利用 Hooks 实现与类组件生命周期对应的功能：
+在 React 函数组件中，没有像类组件那样固定的生命周期方法，但可以用 React Hooks 模拟出对应的功能：
 
 ### 挂载阶段
 
@@ -130,8 +130,6 @@ const MyFunctionComponent = () => {
 
 export default MyFunctionComponent;
 ```
-
-在上述代码中，useEffect 接收两个参数，第一个参数是一个回调函数，第二个参数是一个依赖数组。当依赖数组为空时，回调函数只会在组件挂载和卸载时执行，模拟了 componentDidMount 和 componentWillUnmount 的功能。
 
 ### 更新阶段
 
@@ -164,8 +162,6 @@ const MyFunctionComponent = () => {
 
 export default MyFunctionComponent;
 ```
-
-在这个例子中，useEffect 的依赖数组包含了 count，当 count 的值发生变化时，回调函数会执行，模拟了 componentDidUpdate 的功能。
 
 ### 卸载阶段
 
@@ -200,9 +196,6 @@ const unsubscribeFromSomeEvent = (subscription) => {
 
 export default MyFunctionComponent;
 ```
-
-在上述代码中，useEffect 的回调函数返回了一个清理函数，当组件卸载时，清理函数会被调用，模拟了 componentWillUnmount 的功能。
-通过使用 useEffect 钩子，函数组件可以实现与类组件生命周期类似的功能，并且代码更加简洁和易于维护。
 
 ## Hook
 
@@ -458,11 +451,11 @@ export default Example;
 
 ### useCallback
 
-**作用**：它允许你在函数组件中缓存函数定义。这对于性能优化非常有用，特别是当函数作为 props 传递给子组件时。
+**作用**：在函数组件中缓存函数的引用，避免每次渲染都生成新函数。函数作为 props 传给子组件时，配合 `React.memo` 可以避免子组件跟着重渲染。
 **参数**：
 
 1. 回调函数： 这是你需要缓存的函数。
-2. 依赖项数组：包含计算函数依赖的所有变量。
+2. 依赖项数组：包含回调函数依赖的所有变量。
 
 ```tsx
 import React, { useState, useCallback, memo } from 'react';
@@ -644,7 +637,7 @@ function Tabs({ tabs }) {
 
 ### useSyncExternalStore
 
-**作用**：React 18 提供的用于**安全订阅外部数据源**的 Hook（如浏览器 API、第三方状态管理库）。它能正确处理并发模式下的 tearing（撕裂）问题。状态管理库（Redux、Zustand、Recoil 等）底层都基于它实现。日常业务直接订阅 `window.matchMedia`、`IntersectionObserver`、`localStorage` 等时也很有用。
+**作用**：React 18 提供的用于**安全订阅外部数据源**的 Hook（如浏览器 API、第三方状态管理库）。它能正确处理并发模式下的 tearing（撕裂）问题。状态管理库（Redux、Zustand、Recoil 等）底层都基于它实现。日常业务要直接订阅 `window.matchMedia`、`IntersectionObserver`、`localStorage` 这类外部源时，也可以用它。
 
 ```tsx
 import { useSyncExternalStore } from 'react';

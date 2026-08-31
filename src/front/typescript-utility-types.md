@@ -5,7 +5,7 @@ title: TypeScript Utility Types（工具类型）
 
 # TypeScript Utility Types（工具类型）
 
-Utility Types 是 TypeScript 提供的一组泛型工具，用来基于已有类型快速生成新类型。它们特别适合处理接口复用、表单状态、API 请求参数和响应数据。
+Utility Types 是 TypeScript 提供的一组泛型工具，用来基于已有类型快速生成新类型。
 
 下面的示例以 TypeScript 5.x 为准。内置工具类型可以直接使用，不需要额外导入。
 
@@ -203,7 +203,7 @@ type LowerMethod = Lowercase<'GET'> // "get"
 内置工具类型主要处理一层结构。下面这些类型适合在业务项目中补充使用。
 
 ```ts
-// 递归可选：适合深层配置的局部覆盖
+// 递归可选：适合深层配置的局部覆盖，层级太深会拖慢类型检查
 type DeepPartial<T> = T extends Function
   ? T
   : T extends Array<infer U>
@@ -292,10 +292,3 @@ async function getArticle(id: number) {
 type ArticleResult = Awaited<ReturnType<typeof getArticle>>
 type GetArticleArgs = Parameters<typeof getArticle>
 ```
-
-## 使用建议
-
-- 优先使用内置工具类型，团队成员更容易理解，也能减少重复定义。
-- `DeepPartial`、`DeepReadonly` 等递归类型不要无节制使用；复杂联合类型可能增加类型检查时间。
-- `any` 会削弱工具类型的约束效果，公共 API 尽量使用 `unknown`，再通过类型守卫缩小范围。
-- 类型只在编译期存在，运行时仍然需要对接口返回值、用户输入等外部数据进行校验。

@@ -1030,7 +1030,7 @@ val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
 ### Retrofit 网络请求封装
 
-Retrofit 是目前最主流的网络请求库，基于 OkHttp，配合协程使用非常简洁。
+Retrofit 是目前最主流的网络请求库，基于 OkHttp，接口直接声明成 `suspend` 函数。
 
 ```kt
 // 依赖
@@ -1201,7 +1201,7 @@ class UserRepositoryImpl(
 
 ### DataStore 存储
 
-DataStore 用来替代 SharedPreferences 存 key-value，基于 Flow，天然支持协程和类型安全。
+DataStore 用来替代 SharedPreferences 存 key-value，读写都是 suspend 函数和 Flow，协程里直接调用。
 
 ```kt
 // 依赖
@@ -1286,7 +1286,7 @@ MVVM 是现在 Android 官方推荐的主流架构：**View**（Compose 界面�
 * 界面和逻辑解耦，Activity 只关心渲染
 * 状态放在 ViewModel 中，旋转屏幕不会丢失
 * 逻辑不依赖 Android 组件，方便单元测试
-* Compose 的响应式特性和 MVVM 天然契合
+* Compose 靠状态驱动重组，和 StateFlow 驱动的 MVVM 正好对得上
 
 ### 项目包结构
 
@@ -1319,7 +1319,7 @@ com.example.app/
 
 ### ViewModel 生命周期
 
-ViewModel 的生命周期比 Activity/Fragment 长：**旋转屏幕（配置变更）时 Activity 会销毁重建，但 ViewModel 不会**，所以把状态放 ViewModel 里天然防丢。
+ViewModel 的生命周期比 Activity/Fragment 长：**旋转屏幕（配置变更）时 Activity 会销毁重建，但 ViewModel 不会**，所以把状态放 ViewModel 里就不会丢。
 
 ```kt
 class HomeViewModel : ViewModel() {

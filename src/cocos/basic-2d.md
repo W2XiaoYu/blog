@@ -703,8 +703,6 @@ onDisable() {
 6. 时间结束后打开结算弹窗。
 7. 点击重新开始，重新加载当前场景。
 
-等重新开始按钮真正把场景跑起来，Cocos Creator 2D 的基本工作方式也就连成了一条线。
-
 ## 官方资料
 
 - [Cocos Creator 3.8 用户手册](https://docs.cocos.com/creator/3.8/manual/zh/)

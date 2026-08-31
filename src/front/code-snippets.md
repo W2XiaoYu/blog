@@ -221,7 +221,6 @@ Promise.myAll=function (promises){
 }
 
 ```
----
 
 ## View Transitions API 圆形扩散主题切换
 

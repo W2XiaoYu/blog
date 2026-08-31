@@ -200,9 +200,9 @@ MouseRegion(
 |------|------|------|
 | 触发范围 | 触发整个 `StatefulWidget` 的 `build()` 重建 |只触发 `ValueListenableBuilder` 区域刷新|
 | 适用场景 | 简单状态（页面级状态切换） |局部状态（如 hover、开关、单个按钮状态）|
-| 性能 | 会重建整棵 widget 树（当前 widget） |只重建绑定该状态的组件，性能更优|
-| 逻辑清晰度| 状态分散在 widget 树中 |状态集中，可封装复用|
-| 点击与 hover 不兼容时 |  容易在 `setState()` 导致点击丢失 |状态隔离，互不干扰，体验稳定|
+| 性能 | 会重建整棵 widget 树（当前 widget） |只重建绑定该状态的 builder 块|
+| 逻辑清晰度| 状态分散在 widget 树中 |状态收在一个 `ValueNotifier` 里，多处可订阅|
+| 点击与 hover 不兼容时 |  容易在 `setState()` 导致点击丢失 |hover 只刷新按钮本身，不会打断点击|
 
 ## Windows 输入框切换到英文输入法
 

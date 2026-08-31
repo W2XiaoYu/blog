@@ -267,15 +267,3 @@ if (!('startViewTransition' in document)) {
     return
 }
 ```
-
-## 实现要点
-
-| 要点 | 方案 |
-|------|------|
-| 动画引擎 | 纯 CSS `@keyframes`，不用 JS `animate()` |
-| 方向控制 | `theme-grow`（扩散）/ `theme-shrink`（收回）两个 class |
-| z-index | 扩散时 new 在上层，收回时 old 在上层 |
-| 点击位置 | `--theme-x` / `--theme-y` CSS 变量 |
-| 防闪烁 | `animation-fill-mode: forwards` |
-| 清理时机 | `transition.finished` 而非 `transition.ready` |
-| 降级 | 检测 `startViewTransition`，不支持则直接切换 |
