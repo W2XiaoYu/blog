@@ -28,7 +28,6 @@ const cocosNavItems = [
 ]
 
 const electronItems = [
-  { text: '全局屏幕取色器', link: '/electron/color-picker' },
   { text: '打包自动代码签名', link: '/electron/code-signing' },
   { text: '透明窗口 slider 拖拽光标', link: '/electron/slider-drag-cursor' },
 ]
