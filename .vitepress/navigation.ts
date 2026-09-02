@@ -41,6 +41,8 @@ const databaseDesignItems = [
 
 const backendNavItems = [
   { text: 'Go 语言', link: '/back-end/go' },
+  { text: 'Gin', link: '/back-end/gin' },
+  { text: 'GORM', link: '/back-end/gorm' },
   { text: '数据库设计', link: '/back-end/database-design' },
   { text: 'Docker 部署', link: '/back-end/docker-deploy' },
   { text: 'Nginx', link: '/back-end/nginx' },
@@ -50,6 +52,8 @@ const backendNavItems = [
 
 const backendSidebarItems = [
   { text: 'Go 语言', link: '/back-end/go' },
+  { text: 'Gin', link: '/back-end/gin' },
+  { text: 'GORM', link: '/back-end/gorm' },
   {
     text: '数据库设计',
     link: '/back-end/database-design',
