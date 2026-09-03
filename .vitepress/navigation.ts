@@ -28,6 +28,7 @@ const cocosNavItems = [
 ]
 
 const electronItems = [
+  { text: 'Windows 软件更新方案', link: '/electron/windows-update' },
   { text: '打包自动代码签名', link: '/electron/code-signing' },
   { text: '透明窗口 slider 拖拽光标', link: '/electron/slider-drag-cursor' },
 ]
