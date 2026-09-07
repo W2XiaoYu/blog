@@ -35,6 +35,7 @@ const electronItems = [
 
 const databaseDesignItems = [
   { text: '多账号登录与账号合并', link: '/back-end/database-design/multi-account-auth-merge' },
+  { text: '两步验证 TOTP', link: '/back-end/database-design/totp-two-factor' },
   { text: '一级邀请分佣', link: '/back-end/database-design/direct-invite-commission' },
   { text: '商品 SPU 与 SKU', link: '/back-end/database-design/product-spu-sku' },
 ]
