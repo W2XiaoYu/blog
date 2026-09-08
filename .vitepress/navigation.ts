@@ -80,6 +80,7 @@ export const nav = [
   { text: 'Cocos', items: cocosNavItems },
   { text: '桌面端', items: electronItems },
   { text: '后端 & 运维', items: backendNavItems },
+  { text: '关于', link: '/about' },
 ] satisfies DefaultTheme.NavItem[]
 
 export const sidebar = [

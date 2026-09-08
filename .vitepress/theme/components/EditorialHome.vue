@@ -84,6 +84,7 @@ const topics = [
 
     <footer class="home-colophon">
       <span>CONGWONG <span aria-hidden="true">/</span> 随心记录，慢慢积累。</span>
+      <a class="colophon-about" :href="withBase('/about')">关于我 <span aria-hidden="true">↗</span></a>
       <span>人生到处知何似，应似飞鸿踏雪泥。</span>
     </footer>
   </main>
@@ -164,6 +165,8 @@ h1 {
 .topic-detail { font-size: 12px; color: var(--vp-c-text-2); line-height: 1.7; }
 .home-colophon { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; color: var(--vp-c-text-2); letter-spacing: .04em; line-height: 1.8; border-top: 1px solid var(--vp-c-divider); padding: 25px 0 36px; }
 .home-colophon span span { padding: 0 8px; }
+.colophon-about { color: var(--vp-c-brand-1); }
+.colophon-about:hover { color: var(--vp-c-text-1); }
 a:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: 6px; border-radius: 2px; }
 
 /* 入场动画：首屏依次浮现，半秒内完成，只播一次 */
