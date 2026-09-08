@@ -90,32 +90,8 @@ jobs:
     permissions:
       pages: write
       id-token: write
-    env:
-      # SMTP_PASSWORD 等四个 secrets 配好后，部署成功才会发邮件；没配则跳过这一步
-      SMTP_READY: ${{ secrets.SMTP_PASSWORD != '' }}
     steps:
       # 部署到 GitHub Pages
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-      # 部署成功后发邮件通知（需要先在仓库 Settings → Secrets and variables → Actions 配置：
-      #   SMTP_SERVER / SMTP_USERNAME / SMTP_PASSWORD / NOTIFY_TO）
-      - name: Notify by email
-        if: env.SMTP_READY == 'true'
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: ${{ secrets.SMTP_SERVER }}
-          server_port: 465
-          username: ${{ secrets.SMTP_USERNAME }}
-          password: ${{ secrets.SMTP_PASSWORD }}
-          from: ${{ secrets.SMTP_USERNAME }}
-          to: ${{ secrets.NOTIFY_TO }}
-          subject: '博客部署成功 ${{ github.sha }}'
-          body: |
-            部署成功，站点已更新。
-
-            提交：${{ github.event.head_commit.message }}
-            分支：${{ github.ref_name }}
-            站点：${{ steps.deployment.outputs.page_url }}
-            运行记录：${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
