@@ -1,140 +1,93 @@
-/**
- * Customize default theme styling by overriding CSS variables:
- * https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/vars.css
- */
- @import './vp-code.css';
- @import './style/blur.css';
-/**
- * Colors
- *
- * Each colors have exact same color scale system with 3 levels of solid
- * colors with different brightness, and 1 soft color.
- *
- * - `XXX-1`: The most solid color used mainly for colored text. It must
- *   satisfy the contrast ratio against when used on top of `XXX-soft`.
- *
- * - `XXX-2`: The color used mainly for hover state of the button.
- *
- * - `XXX-3`: The color for solid background, such as bg color of the button.
- *   It must satisfy the contrast ratio with pure white (#ffffff) text on
- *   top of it.
- *
- * - `XXX-soft`: The color used for subtle background such as custom container
- *   or badges. It must satisfy the contrast ratio when putting `XXX-1` colors
- *   on top of it.
- *
- *   The soft color must be semi transparent alpha channel. This is crucial
- *   because it allows adding multiple "soft" colors on top of each other
- *   to create a accent, such as when having inline code block inside
- *   custom containers.
- *
- * - `default`: The color used purely for subtle indication without any
- *   special meanings attached to it such as bg color for menu hover state.
- *
- * - `brand`: Used for primary brand colors, such as link text, button with
- *   brand theme, etc.
- *
- * - `tip`: Used to indicate useful information. The default theme uses the
- *   brand color for this by default.
- *
- * - `warning`: Used to indicate warning to the users. Used in custom
- *   container, badges, etc.
- *
- * - `danger`: Used to show error, or dangerous message to the users. Used
- *   in custom container, badges, etc.
- * -------------------------------------------------------------------------- */
+@import './vp-code.css';
 
 :root {
-  --vp-c-default-1: var(--vp-c-gray-1);
-  --vp-c-default-2: var(--vp-c-gray-2);
-  --vp-c-default-3: var(--vp-c-gray-3);
-  --vp-c-default-soft: var(--vp-c-gray-soft);
-
-  --vp-c-brand-1: var(--vp-c-indigo-1);
-  --vp-c-brand-2: var(--vp-c-indigo-2);
-  --vp-c-brand-3: var(--vp-c-indigo-3);
-  --vp-c-brand-soft: var(--vp-c-indigo-soft);
-
+  --notes-font-editorial: 'Iowan Old Style', 'Palatino Linotype', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', SimSun, serif;
+  --vp-font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --vp-c-bg: #f7f7f5;
+  --vp-c-bg-alt: #f0f0ee;
+  --vp-c-bg-elv: #fbfbfa;
+  --vp-c-bg-soft: #ededeb;
+  --vp-c-text-1: #26282e;
+  --vp-c-text-2: #5d6168;
+  --vp-c-text-3: #757982;
+  --vp-c-divider: #e0e0dc;
+  --vp-c-border: #c9cbc6;
+  --vp-c-gutter: #e0e0dc;
+  --vp-c-brand-1: #3d63dd;
+  --vp-c-brand-2: #4a72e4;
+  --vp-c-brand-3: #3554c0;
+  --vp-c-brand-soft: rgba(61, 99, 221, .09);
+  --vp-c-default-soft: rgba(80, 84, 92, .07);
   --vp-c-tip-1: var(--vp-c-brand-1);
   --vp-c-tip-2: var(--vp-c-brand-2);
   --vp-c-tip-3: var(--vp-c-brand-3);
   --vp-c-tip-soft: var(--vp-c-brand-soft);
-
-  --vp-c-warning-1: var(--vp-c-yellow-1);
-  --vp-c-warning-2: var(--vp-c-yellow-2);
-  --vp-c-warning-3: var(--vp-c-yellow-3);
-  --vp-c-warning-soft: var(--vp-c-yellow-soft);
-
-  --vp-c-danger-1: var(--vp-c-red-1);
-  --vp-c-danger-2: var(--vp-c-red-2);
-  --vp-c-danger-3: var(--vp-c-red-3);
-  --vp-c-danger-soft: var(--vp-c-red-soft);
-}
-
-/**
- * Component: Button
- * -------------------------------------------------------------------------- */
-
-:root {
-  --vp-button-brand-border: transparent;
-  --vp-button-brand-text: var(--vp-c-white);
+  --vp-nav-bg-color: var(--vp-c-bg);
+  --vp-sidebar-bg-color: var(--vp-c-bg);
+  --vp-local-nav-bg-color: var(--vp-c-bg);
+  --vp-code-block-bg: #eff0f1;
+  --vp-code-tab-bg: var(--vp-code-block-bg);
+  --vp-code-bg: var(--vp-c-bg-soft);
+  --vp-code-color: var(--vp-c-brand-1);
+  --vp-code-block-divider-color: var(--vp-c-divider);
   --vp-button-brand-bg: var(--vp-c-brand-3);
-  --vp-button-brand-hover-border: transparent;
-  --vp-button-brand-hover-text: var(--vp-c-white);
   --vp-button-brand-hover-bg: var(--vp-c-brand-2);
-  --vp-button-brand-active-border: transparent;
-  --vp-button-brand-active-text: var(--vp-c-white);
   --vp-button-brand-active-bg: var(--vp-c-brand-1);
-}
-
-/**
- * Component: Home
- * -------------------------------------------------------------------------- */
-
-:root {
-  --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: -webkit-linear-gradient(
-    120deg,
-    #bd34fe 30%,
-    #41d1ff
-  );
-
-  --vp-home-hero-image-background-image: linear-gradient(
-    -45deg,
-    #bd34fe 50%,
-    #47caff 50%
-  );
-  --vp-home-hero-image-filter: blur(44px);
-}
-
-@media (min-width: 640px) {
-  :root {
-    --vp-home-hero-image-filter: blur(56px);
-  }
-}
-
-@media (min-width: 960px) {
-  :root {
-    --vp-home-hero-image-filter: blur(68px);
-  }
-}
-
-/**
- * Component: Custom Block
- * -------------------------------------------------------------------------- */
-
-:root {
-  --vp-custom-block-tip-border: transparent;
-  --vp-custom-block-tip-text: var(--vp-c-text-1);
+  --vp-button-brand-text: #ffffff;
+  --vp-custom-block-tip-border: var(--vp-c-divider);
   --vp-custom-block-tip-bg: var(--vp-c-brand-soft);
+  --vp-custom-block-tip-text: var(--vp-c-text-1);
   --vp-custom-block-tip-code-bg: var(--vp-c-brand-soft);
 }
 
-/**
- * Component: Algolia
- * -------------------------------------------------------------------------- */
-
-.DocSearch {
-  --docsearch-primary-color: var(--vp-c-brand-1) !important;
+.dark {
+  --vp-c-bg: #1b1d22;
+  --vp-c-bg-alt: #17191d;
+  --vp-c-bg-elv: #21242b;
+  --vp-c-bg-soft: #22252c;
+  --vp-c-text-1: #e7e8ec;
+  --vp-c-text-2: #a8adb8;
+  --vp-c-text-3: #8b909b;
+  --vp-c-divider: #33363e;
+  --vp-c-border: #454953;
+  --vp-c-gutter: #33363e;
+  --vp-c-brand-1: #93a9f0;
+  --vp-c-brand-2: #a7baf4;
+  --vp-c-brand-3: #5b74d8;
+  --vp-c-brand-soft: rgba(147, 169, 240, .10);
+  --vp-c-default-soft: rgba(180, 184, 198, .07);
+  --vp-code-block-bg: #16181d;
 }
 
+body { font-feature-settings: 'kern'; }
+:focus-visible { outline-color: var(--vp-c-brand-1); }
+.VPNavBar .content-body, .VPNavBar:not(.has-sidebar), .VPLocalNav {
+  background-color: var(--vp-c-bg) !important;
+  backdrop-filter: none !important;
+}
+.VPNavBar .divider-line { background-color: var(--vp-c-divider) !important; }
+.VPNavBarTitle .title { font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+.VPNavBarTitle .logo { height: 26px; width: 26px; margin-right: 10px; }
+.VPNavBarMenuLink, .VPNavBarMenuGroup .button { font-size: 14px !important; }
+.VPNavBarSearch .DocSearch-Button { border: 1px solid var(--vp-c-divider); border-radius: 6px; background: var(--vp-c-bg-soft); }
+.VPFlyout .VPMenu { border-radius: 8px; border: 1px solid var(--vp-c-divider); box-shadow: 0 4px 16px rgb(0 0 0 / 5%); }
+.VPSidebar { border-right: 1px solid var(--vp-c-divider); }
+.VPSidebarItem.level-0 > .item > .text { font-size: 13px; letter-spacing: .05em; }
+.VPSidebarItem.level-1 .text { font-size: 14px; line-height: 1.8; }
+.VPSidebarItem.is-active > .item > .link > .text { font-weight: 600; }
+.VPDoc .content-container { max-width: 740px !important; }
+.vp-doc { font-size: 17px; }
+.vp-doc h1, .vp-doc h2, .vp-doc h3 { text-wrap: pretty; }
+.vp-doc h1 { font-family: var(--notes-font-editorial); font-size: clamp(28px, 3vw, 36px); font-weight: 600; line-height: 1.5; letter-spacing: -.025em; }
+.vp-doc h2 { margin-top: 44px; padding-top: 28px; font-size: 24px; letter-spacing: -.02em; line-height: 1.5; }
+.vp-doc h3 { font-size: 20px; line-height: 1.6; margin-top: 30px; }
+.vp-doc p, .vp-doc li { line-height: 1.9; }
+.vp-doc p { margin: 20px 0; }
+.vp-doc a { text-decoration-thickness: 1px; text-underline-offset: 4px; }
+.vp-doc blockquote { border-left: 2px solid var(--vp-c-brand-1); padding: 2px 0 2px 20px; color: var(--vp-c-text-2); }
+.vp-doc :not(pre) > code { border-radius: 3px; padding: 3px 5px; font-size: .88em; }
+.vp-doc .custom-block { border-radius: 6px; }
+.vp-doc th, .vp-doc td { font-size: 15px; }
+.VPDocFooter .pager-link { border-radius: 6px; }
+.VPDocAsideOutline .outline-link { font-size: 12.5px; }
+.reading-meta { display: block; color: var(--vp-c-text-2); font-size: 13px; letter-spacing: .02em; margin-bottom: 20px; }

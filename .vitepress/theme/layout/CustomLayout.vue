@@ -5,7 +5,7 @@ import { nextTick, provide } from 'vue'
 import useSpendTime from '../../hooks/useSpendTime'
 import BackToTop from '../components/BackToTop.vue'
 const { isDark } = useData()
-const { text, textStyle, colorStyle } = useSpendTime()
+const { text } = useSpendTime()
 
 const enableTransitions = () =>
     'startViewTransition' in document &&
@@ -42,9 +42,7 @@ provide('toggle-appearance', async ({ clientX: x, clientY: y }: MouseEvent) => {
 <template>
     <DefaultTheme.Layout>
         <template #doc-before>
-            <span :style="textStyle">
-                <span :style="colorStyle">{{ text }}</span>
-            </span>
+            <p class="reading-meta">{{ text }}</p>
         </template>
         <template #doc-after>
             <BackToTop />
@@ -82,10 +80,4 @@ provide('toggle-appearance', async ({ clientX: x, clientY: y }: MouseEvent) => {
     to   { clip-path: circle(0px at var(--theme-x) var(--theme-y)); }
 }
 
-.VPSwitchAppearance {
-    width: 22px !important;
-}
-.VPSwitchAppearance .check {
-    transform: none !important;
-}
 </style>

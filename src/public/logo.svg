@@ -1,18 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
-  <path d="M12 20c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8z" fill="#FFE4B5" stroke="none"/>
-  <path d="M12 14c-3.314 0-6-2.686-6-6s3.314-6 6-6 6 2.686 6 6-3.314 6-6 6z" fill="#FFEBCD" stroke="none"/>
-  <path d="M12 14c-1.654 0-3-1.346-3-3s1.346-3 3-3 3 1.346 3 3-1.346 3-3 3z" fill="#FFF8DC" stroke="none"/>
-  <path d="M12 14c-0.827 0-1.5-0.673-1.5-1.5s0.673-1.5 1.5-1.5 1.5 0.673 1.5 1.5-0.673 1.5-1.5 1.5z" fill="#FFE4B5" stroke="none"/>
-  <path d="M10 12h4" stroke="#D2B48C" stroke-width="2"/>
-  <path d="M10 16h4" stroke="#D2B48C" stroke-width="2"/>
-  <path d="M10 8h4" stroke="#D2B48C" stroke-width="2"/>
-  <circle cx="12" cy="12" r="1" fill="#D2B48C"/>
-  <path d="M12 8a4 4 0 1 0 0 8" stroke="#D2B48C" stroke-width="2"/>
-  <path d="M12 16v-8" stroke="#D2B48C" stroke-width="2"/>
-  <path d="M10 12h4" stroke="#D2B48C" stroke-width="2"/>
-  <path d="M10 16h4" stroke="#D2B48C" stroke-width="2"/>
-  <path d="M10 8h4" stroke="#D2B48C" stroke-width="2"/>
-  <path d="M12 20v-4" stroke="#D2B48C" stroke-width="2"/>
-  <path d="M8 20h8" stroke="#D2B48C" stroke-width="2"/>
-  <path d="M12 16v4" stroke="#D2B48C" stroke-width="2"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <style>
+    .page { fill: #3f4552; }
+    .cursor { stroke: #3d63dd; }
+    @media (prefers-color-scheme: dark) {
+      .page { fill: #c9cedb; }
+      .cursor { stroke: #93a9f0; }
+    }
+  </style>
+  <!-- 左页：肩部圆滑、外缘微外鼓、页底摊开弧、顶缘向中缝下垂 -->
+  <path class="page" d="M14.5 23.6c-2.2-1.5-5.4-1.8-8-1-.9.3-1.8-.4-1.8-1.3C4.1 17.8 4.1 13.5 4.7 9.9c0-.8.5-1.4 1.2-1.7 2.9-1 6.8-.6 8.6 1.4v14Z"/>
+  <!-- 右页：镜像 -->
+  <path class="page" d="M17.5 23.6c2.2-1.5 5.4-1.8 8-1 .9.3 1.8-.4 1.8-1.3.6-3.5.6-7.8 0-11.4 0-.8-.5-1.4-1.2-1.7-2.9-1-6.8-.6-8.6 1.4v14Z"/>
+  <!-- 中缝装订线 / 阅读光标 -->
+  <path class="cursor" d="M16 11v9.5" stroke-width="2.6" stroke-linecap="round"/>
 </svg>

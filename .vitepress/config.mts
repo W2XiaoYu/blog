@@ -11,7 +11,7 @@ export default defineConfig({
   title: "CongWong的笔记",
   description: "记录自己",
   head: [
-    ['link', { rel: 'icon', href: baseUrl + 'favicon.ico' }]
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: baseUrl + 'logo.svg' }]
   ],
   srcDir: "src",
 
@@ -53,7 +53,8 @@ export default defineConfig({
       prev: "上一页",
       next: "下一页"
     },
-    logo: '/image/8858-82f0b068a02e745a3716c87d871cf979.jpg',
+    logo: { src: '/logo.svg', alt: '' },
+    siteTitle: 'CongWong / 笔记',
     nav,
     sidebar,
 
